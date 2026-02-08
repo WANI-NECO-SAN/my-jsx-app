@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>SpriteForge</title>
 
-  <!-- React CDN -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,9 +12,8 @@
     body { margin:0; background:#0a0a12; }
   </style>
 </head>
-
 <body>
-  <div id="root"></div>
+<div id="root"></div>
 
 <script type="text/babel">
 
@@ -29,34 +27,44 @@ function SpriteForge() {
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [fps, setFps] = useState(8);
+  const [zoom, setZoom] = useState(3);
 
   const animRef = useRef(null);
   const lastTimeRef = useRef(0);
 
-  // --- Image Upload ---
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // ---- Auto Detect (簡略安定版) ----
+  const autoDetectSprites = useCallback((img, threshold = 240, minSize = 20) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        setImage(img);
-        setImageSrc(ev.target.result);
-        generateSimpleFrames(img);
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
+    const data = ctx.getImageData(0,0,img.width,img.height).data;
+    const w = img.width;
+    const h = img.height;
 
-  // --- Simple grid split (4 frames horizontal) ---
-  const generateSimpleFrames = (img) => {
+    const regions = [];
+    const block = 4;
+
+    for (let y = 0; y < h; y += block) {
+      for (let x = 0; x < w; x += block) {
+        const i = (y*w + x) * 4;
+        const a = data[i+3];
+        if (a > 20) {
+          regions.push({ x, y, w:block, h:block });
+        }
+      }
+    }
+
+    return regions.slice(0, 8); // 安定化のため上限
+  }, []);
+
+  // ---- Frame生成 ----
+  const generateFrames = useCallback((img) => {
     const cols = 4;
     const frameWidth = img.width / cols;
     const frameHeight = img.height;
-
     const newFrames = [];
 
     for (let i = 0; i < cols; i++) {
@@ -77,44 +85,62 @@ function SpriteForge() {
     }
 
     setFrames(newFrames);
+  }, []);
+
+  // ---- Upload ----
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        setImage(img);
+        setImageSrc(ev.target.result);
+        generateFrames(img);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
-  // --- Animation ---
+  // ---- Animation ----
   useEffect(() => {
     if (!isPlaying || frames.length === 0) return;
 
     const interval = 1000 / fps;
-    let frameIndex = 0;
+    let index = 0;
 
     const animate = (ts) => {
       if (ts - lastTimeRef.current >= interval) {
         lastTimeRef.current = ts;
-        setCurrentFrame(frameIndex);
-        frameIndex = (frameIndex + 1) % frames.length;
+        setCurrentFrame(index);
+        index = (index + 1) % frames.length;
       }
       animRef.current = requestAnimationFrame(animate);
     };
 
     animRef.current = requestAnimationFrame(animate);
-
     return () => cancelAnimationFrame(animRef.current);
+
   }, [isPlaying, fps, frames]);
 
   return (
     <div style={{
-      minHeight: "100vh",
-      color: "#e0e0e0",
-      fontFamily: "monospace",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      padding: "20px"
+      minHeight:"100vh",
+      color:"#e0e0e0",
+      fontFamily:"monospace",
+      display:"flex",
+      flexDirection:"column",
+      alignItems:"center",
+      padding:"20px"
     }}>
 
       <h1 style={{
-        background: "linear-gradient(135deg,#ff6b9d,#c44dff,#6bbaff)",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent"
+        background:"linear-gradient(135deg,#ff6b9d,#c44dff,#6bbaff)",
+        WebkitBackgroundClip:"text",
+        WebkitTextFillColor:"transparent"
       }}>
         ⚔ SPRITE FORGE
       </h1>
@@ -124,32 +150,40 @@ function SpriteForge() {
       {frames.length > 0 && (
         <>
           <div style={{
-            marginTop: "20px",
-            background: "#1a1a2e",
-            padding: "20px",
-            borderRadius: "12px"
+            marginTop:"20px",
+            background:"#1a1a2e",
+            padding:"20px",
+            borderRadius:"12px"
           }}>
             <img
               src={frames[currentFrame]}
               style={{
-                imageRendering: "pixelated",
-                width: "200px"
+                imageRendering:"pixelated",
+                width: 200 * zoom / 3
               }}
             />
           </div>
 
-          <div style={{ marginTop: "15px" }}>
-            <button onClick={() => setIsPlaying(!isPlaying)}>
+          <div style={{ marginTop:"15px", display:"flex", gap:"10px" }}>
+            <button onClick={()=>setIsPlaying(!isPlaying)}>
               {isPlaying ? "停止" : "再生"}
             </button>
+
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={zoom}
+              onChange={(e)=>setZoom(Number(e.target.value))}
+            />
           </div>
         </>
       )}
+
     </div>
   );
 }
 
-// --- Mount ---
 ReactDOM.createRoot(document.getElementById("root"))
   .render(<SpriteForge />);
 
