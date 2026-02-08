@@ -1,33 +1,792 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Sprite Forge</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      background: #0a0a12;
-      color: #fff;
-      font-family: monospace;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
-    }
-    h1 {
-      font-size: 28px;
-      background: linear-gradient(45deg,#ff6b9d,#c44dff,#6bbaff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>SpriteForge</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-  <div>
-    <h1>⚔ SPRITE FORGE</h1>
-    <p>GitHub Pages 動作確認OK</p>
+  <div id="root"></div>
+
+  <script type="text/babel">
+  import { useState, useRef, useCallback, useEffect } from “react”;
+
+export default function SpriteForge() {
+const [image, setImage] = useState(null);
+const [imageSrc, setImageSrc] = useState(null);
+const [cols, setCols] = useState(4);
+const [rows, setRows] = useState(1);
+const [frames, setFrames] = useState([]);
+const [currentFrame, setCurrentFrame] = useState(0);
+const [isPlaying, setIsPlaying] = useState(false);
+const [fps, setFps] = useState(8);
+const [zoom, setZoom] = useState(3);
+const [bgColor, setBgColor] = useState(”#1a1a2e”);
+const [showGrid, setShowGrid] = useState(true);
+const [selectedFrames, setSelectedFrames] = useState([]);
+const [flipH, setFlipH] = useState(false);
+const [activeTab, setActiveTab] = useState(“preview”);
+const [splitMode, setSplitMode] = useState(“auto”);
+const [detecting, setDetecting] = useState(false);
+const [detectedRegions, setDetectedRegions] = useState([]);
+const [threshold, setThreshold] = useState(240);
+const [minSize, setMinSize] = useState(20);
+const [anchor, setAnchor] = useState(“bottom”); // “bottom” | “center” | “top”
+const [trimEnabled, setTrimEnabled] = useState(true);
+const animRef = useRef(null);
+const fileInputRef = useRef(null);
+const lastTimeRef = useRef(0);
+
+// –– Auto detect sprites ––
+const autoDetectSprites = useCallback((img, thresh, minSz) => {
+const canvas = document.createElement(“canvas”);
+canvas.width = img.width;
+canvas.height = img.height;
+const ctx = canvas.getContext(“2d”);
+ctx.drawImage(img, 0, 0);
+const imageData = ctx.getImageData(0, 0, img.width, img.height);
+const data = imageData.data;
+const w = img.width, h = img.height;
+const mask = new Uint8Array(w * h);
+for (let i = 0; i < w * h; i++) {
+const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2], a = data[i * 4 + 3];
+if (a > 20 && (r < thresh || g < thresh || b < thresh)) mask[i] = 1;
+}
+const visited = new Uint8Array(w * h);
+const regions = [];
+const floodFill = (startX, startY) => {
+const stack = [[startX, startY]];
+let minX = startX, maxX = startX, minY = startY, maxY = startY;
+let pixelCount = 0;
+while (stack.length > 0) {
+const [x, y] = stack.pop();
+const idx = y * w + x;
+if (x < 0 || x >= w || y < 0 || y >= h) continue;
+if (visited[idx] || !mask[idx]) continue;
+visited[idx] = 1;
+pixelCount++;
+minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+}
+return { minX, minY, maxX, maxY, pixelCount };
+};
+for (let y = 0; y < h; y += 2) {
+for (let x = 0; x < w; x += 2) {
+const idx = y * w + x;
+if (mask[idx] && !visited[idx]) {
+const region = floodFill(x, y);
+const rw = region.maxX - region.minX;
+const rh = region.maxY - region.minY;
+if (rw >= minSz && rh >= minSz && region.pixelCount > minSz * minSz * 0.1) {
+regions.push(region);
+}
+}
+}
+}
+const merged = [];
+const used = new Set();
+const GAP = 5;
+regions.sort((a, b) => a.minX - b.minX);
+for (let i = 0; i < regions.length; i++) {
+if (used.has(i)) continue;
+let { minX, minY, maxX, maxY } = regions[i];
+used.add(i);
+let changed = true;
+while (changed) {
+changed = false;
+for (let j = 0; j < regions.length; j++) {
+if (used.has(j)) continue;
+const r = regions[j];
+if (r.minX <= maxX + GAP && r.maxX >= minX - GAP && r.minY <= maxY + GAP && r.maxY >= minY - GAP) {
+minX = Math.min(minX, r.minX); minY = Math.min(minY, r.minY);
+maxX = Math.max(maxX, r.maxX); maxY = Math.max(maxY, r.maxY);
+used.add(j); changed = true;
+}
+}
+}
+merged.push({ minX, minY, maxX, maxY, w: maxX - minX + 1, h: maxY - minY + 1 });
+}
+merged.sort((a, b) => a.minX - b.minX);
+return merged;
+}, []);
+
+// –– Compute horizontal center of mass for a region ––
+const computeCenterX = useCallback((img, region) => {
+const canvas = document.createElement(“canvas”);
+canvas.width = region.w;
+canvas.height = region.h;
+const ctx = canvas.getContext(“2d”);
+ctx.drawImage(img, region.minX, region.minY, region.w, region.h, 0, 0, region.w, region.h);
+const imageData = ctx.getImageData(0, 0, region.w, region.h);
+const data = imageData.data;
+let sumX = 0, count = 0;
+for (let y = 0; y < region.h; y++) {
+for (let x = 0; x < region.w; x++) {
+const i = (y * region.w + x) * 4;
+const a = data[i + 3];
+const r = data[i], g = data[i + 1], b = data[i + 2];
+if (a > 20 && (r < 240 || g < 240 || b < 240)) {
+sumX += x;
+count++;
+}
+}
+}
+return count > 0 ? sumX / count : region.w / 2;
+}, []);
+
+// –– Generate frames with anchor-based alignment (vertical + horizontal) ––
+const generateFramesFromRegions = useCallback((img, regions, anchorMode) => {
+if (regions.length === 0) return [];
+const maxW = Math.max(…regions.map(r => r.w));
+const maxH = Math.max(…regions.map(r => r.h));
+
+```
+// Compute center of mass for each region
+const centersX = regions.map(r => computeCenterX(img, r));
+const maxCenterX = Math.max(...centersX);
+const maxRightExtent = Math.max(...regions.map((r, i) => (r.w - centersX[i])));
+
+// Frame size: enough to hold the widest sprite aligned by center of mass
+const pad = 4;
+const frameW = Math.ceil(maxCenterX + maxRightExtent) + pad * 2;
+const frameH = maxH + pad * 2;
+
+return regions.map((region, idx) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = frameW;
+  canvas.height = frameH;
+  const ctx = canvas.getContext("2d");
+
+  // Horizontal: align by center of mass
+  const cx = centersX[idx];
+  const offsetX = pad + Math.floor(maxCenterX - cx);
+
+  // Vertical: depends on anchor mode
+  let offsetY;
+  if (anchorMode === "bottom") {
+    offsetY = frameH - pad - region.h;
+  } else if (anchorMode === "top") {
+    offsetY = pad;
+  } else {
+    offsetY = pad + Math.floor((maxH - region.h) / 2);
+  }
+
+  ctx.drawImage(img, region.minX, region.minY, region.w, region.h,
+                offsetX, offsetY, region.w, region.h);
+  return { dataUrl: canvas.toDataURL(), w: frameW, h: frameH, index: idx };
+});
+```
+
+}, [computeCenterX]);
+
+const handleImageUpload = useCallback((e) => {
+const file = e.target.files?.[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = (ev) => {
+const img = new Image();
+img.onload = () => {
+setImage(img);
+setImageSrc(ev.target.result);
+setFrames([]);
+setSelectedFrames([]);
+setCurrentFrame(0);
+setIsPlaying(false);
+setActiveTab(“preview”);
+setDetecting(true);
+setTimeout(() => {
+const regions = autoDetectSprites(img, 240, 20);
+setDetectedRegions(regions);
+if (regions.length > 0) {
+setSplitMode(“auto”);
+const newFrames = generateFramesFromRegions(img, regions, “bottom”);
+setFrames(newFrames);
+setSelectedFrames(newFrames.map((_, i) => i));
+}
+setDetecting(false);
+}, 50);
+};
+img.src = ev.target.result;
+};
+reader.readAsDataURL(file);
+}, [autoDetectSprites, generateFramesFromRegions]);
+
+const splitFramesGrid = useCallback(() => {
+if (!image) return;
+const fw = Math.floor(image.width / cols);
+const fh = Math.floor(image.height / rows);
+const newFrames = [];
+for (let r = 0; r < rows; r++) {
+for (let c = 0; c < cols; c++) {
+const canvas = document.createElement(“canvas”);
+canvas.width = fw; canvas.height = fh;
+const ctx = canvas.getContext(“2d”);
+ctx.drawImage(image, c * fw, r * fh, fw, fh, 0, 0, fw, fh);
+newFrames.push({ dataUrl: canvas.toDataURL(), w: fw, h: fh, index: r * cols + c });
+}
+}
+setFrames(newFrames);
+setSelectedFrames(newFrames.map((_, i) => i));
+setCurrentFrame(0);
+}, [image, cols, rows]);
+
+const rerunAutoDetect = useCallback(() => {
+if (!image) return;
+setDetecting(true);
+setTimeout(() => {
+const regions = autoDetectSprites(image, threshold, minSize);
+setDetectedRegions(regions);
+const newFrames = generateFramesFromRegions(image, regions, anchor);
+setFrames(newFrames);
+setSelectedFrames(newFrames.map((_, i) => i));
+setCurrentFrame(0);
+setDetecting(false);
+}, 50);
+}, [image, threshold, minSize, anchor, autoDetectSprites, generateFramesFromRegions]);
+
+// Re-align when anchor changes
+useEffect(() => {
+if (!image || splitMode !== “auto” || detectedRegions.length === 0) return;
+const newFrames = generateFramesFromRegions(image, detectedRegions, anchor);
+setFrames(newFrames);
+setSelectedFrames(newFrames.map((_, i) => i));
+}, [anchor, image, splitMode, detectedRegions, generateFramesFromRegions]);
+
+useEffect(() => {
+if (!image) return;
+if (splitMode === “grid”) splitFramesGrid();
+}, [image, cols, rows, splitMode, splitFramesGrid]);
+
+// Animation loop
+useEffect(() => {
+if (!isPlaying || selectedFrames.length === 0) {
+if (animRef.current) cancelAnimationFrame(animRef.current);
+return;
+}
+const interval = 1000 / fps;
+let frameIdx = 0;
+const animate = (ts) => {
+if (ts - lastTimeRef.current >= interval) {
+lastTimeRef.current = ts;
+setCurrentFrame(selectedFrames[frameIdx]);
+frameIdx = (frameIdx + 1) % selectedFrames.length;
+}
+animRef.current = requestAnimationFrame(animate);
+};
+animRef.current = requestAnimationFrame(animate);
+return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+}, [isPlaying, fps, selectedFrames]);
+
+const toggleFrame = (idx) => {
+setSelectedFrames((prev) =>
+prev.includes(idx) ? prev.filter((i) => i !== idx) : […prev, idx].sort((a, b) => a - b)
+);
+};
+
+const activeFrameData = frames[currentFrame];
+
+// –– No Image ––
+if (!image) {
+return (
+<div style={{
+minHeight: “100dvh”, background: “#0a0a12”, color: “#e0e0e0”,
+fontFamily: “‘SF Mono’, ‘Menlo’, ‘Courier New’, monospace”,
+display: “flex”, flexDirection: “column”, WebkitTapHighlightColor: “transparent”,
+}}>
+<Header />
+<div style={{
+flex: 1, display: “flex”, flexDirection: “column”,
+alignItems: “center”, justifyContent: “center”, padding: “24px”, gap: “20px”,
+}}
+onDragOver={(e) => e.preventDefault()}
+onDrop={(e) => {
+e.preventDefault();
+const file = e.dataTransfer.files[0];
+if (file && fileInputRef.current) {
+const dt = new DataTransfer(); dt.items.add(file);
+fileInputRef.current.files = dt.files;
+fileInputRef.current.dispatchEvent(new Event(“change”, { bubbles: true }));
+}
+}}
+>
+<input ref={fileInputRef} type=“file” accept=“image/*” onChange={handleImageUpload} style={{ display: “none” }} />
+<div onClick={() => fileInputRef.current?.click()} style={{
+width: “min(280px, 80vw)”, padding: “40px 20px”,
+border: “2px dashed #2a1a4e”, borderRadius: “16px”,
+display: “flex”, flexDirection: “column”, alignItems: “center”, gap: “12px”, cursor: “pointer”,
+}}>
+<div style={{ fontSize: “48px” }}>🖼</div>
+<div style={{ fontSize: “14px”, color: “#aaa”, textAlign: “center” }}>スプライトシートをアップロード</div>
+<div style={{ fontSize: “11px”, color: “#555” }}>タップして選択 / ドラッグ＆ドロップ</div>
+</div>
+<div style={{
+maxWidth: “min(400px, 85vw)”, padding: “16px”,
+background: “#0f0f1a”, border: “1px solid #1a1a30”, borderRadius: “10px”,
+fontSize: “12px”, lineHeight: 2, color: “#888”,
+}}>
+<div style={{ color: “#c44dff”, fontWeight: “bold”, marginBottom: “4px” }}>💡 v3 新機能</div>
+<div>✨ キャラクター自動検出</div>
+<div>📌 足元固定アンカー（ガタつき防止）</div>
+<div>🎮 開発向けエクスポート</div>
+</div>
+</div>
+</div>
+);
+}
+
+// –– Main UI ––
+return (
+<div style={{
+height: “100dvh”, background: “#0a0a12”, color: “#e0e0e0”,
+fontFamily: “‘SF Mono’, ‘Menlo’, ‘Courier New’, monospace”,
+display: “flex”, flexDirection: “column”, overflow: “hidden”,
+WebkitTapHighlightColor: “transparent”,
+}}>
+{/* Header */}
+<div style={{
+background: “linear-gradient(135deg, #0f0f1a, #1a0a2e)”,
+borderBottom: “2px solid #2a1a4e”, padding: “10px 16px”,
+display: “flex”, alignItems: “center”, gap: “10px”, flexShrink: 0,
+}}>
+<span style={{
+fontSize: “18px”, fontWeight: “900”, letterSpacing: “-0.5px”,
+background: “linear-gradient(135deg, #ff6b9d, #c44dff, #6bbaff)”,
+WebkitBackgroundClip: “text”, WebkitTextFillColor: “transparent”,
+}}>⚔ SPRITE FORGE</span>
+<span style={{ fontSize: “10px”, color: “#555”, marginLeft: “auto” }}>
+{image.width}×{image.height} | {frames.length}f
+</span>
+<input ref={fileInputRef} type=“file” accept=“image/*” onChange={handleImageUpload} style={{ display: “none” }} />
+<button onClick={() => fileInputRef.current?.click()} style={{
+background: “none”, border: “1px solid #2a1a4e”, color: “#c44dff”,
+borderRadius: “6px”, padding: “4px 10px”, fontSize: “11px”, cursor: “pointer”, fontFamily: “inherit”,
+}}>変更</button>
+</div>
+
+```
+  {/* Tabs */}
+  <div style={{ display: "flex", borderBottom: "1px solid #1a1a30", background: "#0d0d18", flexShrink: 0 }}>
+    {[
+      { id: "preview", icon: "▶", label: "プレビュー" },
+      { id: "frames", icon: "🎞", label: "フレーム" },
+      { id: "settings", icon: "⚙", label: "設定" },
+    ].map((t) => (
+      <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+        flex: 1, padding: "10px 0", background: "none", border: "none",
+        borderBottom: activeTab === t.id ? "2px solid #c44dff" : "2px solid transparent",
+        color: activeTab === t.id ? "#c44dff" : "#666",
+        fontSize: "12px", fontFamily: "inherit", cursor: "pointer",
+      }}>
+        {t.icon} {t.label}
+      </button>
+    ))}
   </div>
+
+  {/* Content */}
+  <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
+
+    {/* ===== PREVIEW ===== */}
+    {activeTab === "preview" && (
+      <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+        <div style={{
+          flex: 1, display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", padding: "12px", gap: "6px",
+        }}>
+          {detecting ? (
+            <div style={{ color: "#c44dff", fontSize: "14px" }}>🔍 スプライト検出中...</div>
+          ) : (
+            <>
+              <div style={{
+                background: bgColor, borderRadius: "12px", border: "1px solid #1a1a30",
+                display: "flex", alignItems: "flex-end", justifyContent: "center",
+                width: "min(280px, 78vw)", aspectRatio: "1",
+                padding: "8px",
+                position: "relative",
+              }}>
+                {/* Ground line indicator */}
+                {anchor === "bottom" && (
+                  <div style={{
+                    position: "absolute", bottom: "8px", left: "8px", right: "8px",
+                    borderBottom: "1px dashed #ffffff22",
+                  }} />
+                )}
+                {activeFrameData ? (
+                  <img src={activeFrameData.dataUrl} style={{
+                    width: activeFrameData.w * zoom, height: activeFrameData.h * zoom,
+                    imageRendering: "pixelated", transform: flipH ? "scaleX(-1)" : "none",
+                    maxWidth: "95%", maxHeight: "95%", objectFit: "contain",
+                    verticalAlign: "bottom",
+                  }} alt="preview" />
+                ) : (
+                  <div style={{ color: "#555", fontSize: "13px", paddingBottom: "40%" }}>フレームなし</div>
+                )}
+              </div>
+              <div style={{ fontSize: "10px", color: "#555", display: "flex", gap: "8px", alignItems: "center" }}>
+                <span>フレーム #{currentFrame}</span>
+                {activeFrameData && <span>{activeFrameData.w}×{activeFrameData.h}px</span>}
+                <span style={{
+                  background: anchor === "bottom" ? "#4dff8833" : "#66666633",
+                  color: anchor === "bottom" ? "#4dff88" : "#888",
+                  padding: "1px 6px", borderRadius: "4px", fontSize: "9px",
+                }}>
+                  📌 {anchor === "bottom" ? "足元固定" : anchor === "top" ? "頭固定" : "中央"}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Controls */}
+        <div style={{
+          padding: "10px 16px", background: "#0d0d18",
+          borderTop: "1px solid #1a1a30", display: "flex", flexDirection: "column", gap: "8px",
+          flexShrink: 0,
+        }}>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Btn onClick={() => setIsPlaying(!isPlaying)} color={isPlaying ? "#ff6b6b" : "#4dff88"} full>
+              {isPlaying ? "⏹ 停止" : "▶ 再生"}
+            </Btn>
+            <Btn onClick={() => setFlipH(!flipH)} color={flipH ? "#ffb86b" : "#555"}>↔</Btn>
+          </div>
+          <SliderRow label="FPS" value={fps} onChange={setFps} min={1} max={30} display={fps} />
+          <SliderRow label="拡大" value={zoom} onChange={setZoom} min={1} max={10} display={`×${zoom}`} />
+        </div>
+
+        {/* Frame Strip */}
+        <div style={{
+          borderTop: "1px solid #1a1a30", padding: "8px 12px",
+          overflowX: "auto", display: "flex", gap: "6px", flexShrink: 0,
+          alignItems: "flex-end",
+        }}>
+          {frames.map((frame, idx) => (
+            <div key={idx}
+              onClick={() => { toggleFrame(idx); if (!isPlaying) setCurrentFrame(idx); }}
+              style={{
+                flexShrink: 0, padding: "3px", borderRadius: "4px", cursor: "pointer",
+                border: currentFrame === idx ? "2px solid #c44dff"
+                  : selectedFrames.includes(idx) ? "2px solid #4dff8866" : "2px solid #222",
+                opacity: selectedFrames.includes(idx) ? 1 : 0.25,
+                background: bgColor, transition: "all 0.15s",
+              }}>
+              <img src={frame.dataUrl} style={{
+                width: Math.min(frame.w * 1.5, 44), height: Math.min(frame.h * 1.5, 44),
+                imageRendering: "pixelated", display: "block",
+              }} alt={`f${idx}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* ===== FRAMES ===== */}
+    {activeTab === "frames" && (
+      <div style={{ padding: "12px" }}>
+        <div style={{ marginBottom: "12px" }}>
+          <div style={{ fontSize: "11px", color: "#888", marginBottom: "6px" }}>
+            元画像 {splitMode === "auto" && detectedRegions.length > 0 && `(${detectedRegions.length}体検出)`}
+          </div>
+          <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
+            <img src={imageSrc} style={{
+              width: "100%", imageRendering: "pixelated", display: "block", borderRadius: "8px",
+            }} alt="src" />
+            {splitMode === "auto" && detectedRegions.length > 0 && (
+              <svg style={{
+                position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none",
+              }} viewBox={`0 0 ${image.width} ${image.height}`}>
+                {detectedRegions.map((r, i) => (
+                  <g key={i}>
+                    <rect x={r.minX} y={r.minY} width={r.w} height={r.h}
+                      fill="none" stroke="#4dff88" strokeWidth={2} strokeDasharray="4 4" />
+                    <text x={r.minX + 4} y={r.minY + 14} fill="#4dff88" fontSize="12" fontWeight="bold">#{i}</text>
+                    {/* Anchor line */}
+                    {anchor === "bottom" && (
+                      <line x1={r.minX} y1={r.maxY} x2={r.maxX} y2={r.maxY}
+                        stroke="#ff6b9d" strokeWidth={2} />
+                    )}
+                  </g>
+                ))}
+                {/* Global ground line */}
+                {anchor === "bottom" && detectedRegions.length > 0 && (() => {
+                  const maxBottom = Math.max(...detectedRegions.map(r => r.maxY));
+                  return (
+                    <line x1={0} y1={maxBottom} x2={image.width} y2={maxBottom}
+                      stroke="#ff6b9d44" strokeWidth={1} strokeDasharray="8 4" />
+                  );
+                })()}
+              </svg>
+            )}
+            {splitMode === "grid" && showGrid && (
+              <svg style={{
+                position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none",
+              }} viewBox={`0 0 ${image.width} ${image.height}`}>
+                {Array.from({ length: cols - 1 }, (_, i) => (
+                  <line key={`v${i}`}
+                    x1={(i + 1) * image.width / cols} y1={0}
+                    x2={(i + 1) * image.width / cols} y2={image.height}
+                    stroke="#c44dff" strokeWidth={1} strokeDasharray="4 4" opacity={0.7} />
+                ))}
+                {Array.from({ length: rows - 1 }, (_, i) => (
+                  <line key={`h${i}`}
+                    x1={0} y1={(i + 1) * image.height / rows}
+                    x2={image.width} y2={(i + 1) * image.height / rows}
+                    stroke="#c44dff" strokeWidth={1} strokeDasharray="4 4" opacity={0.7} />
+                ))}
+              </svg>
+            )}
+          </div>
+        </div>
+
+        <div style={{ fontSize: "11px", color: "#888", marginBottom: "6px" }}>
+          フレーム選択 — {selectedFrames.length}/{frames.length} 選択中
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${Math.min(frames.length, 5)}, 1fr)`,
+          gap: "6px",
+        }}>
+          {frames.map((frame, idx) => (
+            <div key={idx} onClick={() => toggleFrame(idx)} style={{
+              background: bgColor, borderRadius: "6px", padding: "4px",
+              border: selectedFrames.includes(idx) ? "2px solid #4dff88" : "2px solid #222",
+              opacity: selectedFrames.includes(idx) ? 1 : 0.3,
+              cursor: "pointer", textAlign: "center", transition: "all 0.15s",
+              display: "flex", flexDirection: "column", justifyContent: "flex-end",
+            }}>
+              <img src={frame.dataUrl} style={{
+                width: "100%", imageRendering: "pixelated", display: "block",
+              }} alt={`f${idx}`} />
+              <div style={{ fontSize: "9px", color: "#888", marginTop: "2px" }}>#{idx}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+          <Btn onClick={() => setSelectedFrames(frames.map((_, i) => i))} color="#4dff88" full>全選択</Btn>
+          <Btn onClick={() => setSelectedFrames([])} color="#ff6b6b" full>全解除</Btn>
+        </div>
+      </div>
+    )}
+
+    {/* ===== SETTINGS ===== */}
+    {activeTab === "settings" && (
+      <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        {/* Anchor */}
+        <SettingsSection title="📌 アンカー（基準点）">
+          <div style={{ fontSize: "11px", color: "#888", marginBottom: "4px" }}>
+            フレーム間の位置揃えの基準を設定します
+          </div>
+          <div style={{ display: "flex", gap: "6px" }}>
+            {[
+              { id: "bottom", label: "⬇ 足元固定", desc: "歩行・走行・攻撃に最適" },
+              { id: "center", label: "◎ 中央", desc: "ジャンプ・落下に" },
+              { id: "top", label: "⬆ 頭固定", desc: "特殊用途" },
+            ].map((a) => (
+              <button key={a.id} onClick={() => setAnchor(a.id)} style={{
+                flex: 1, padding: "10px 6px", borderRadius: "8px", cursor: "pointer",
+                background: anchor === a.id ? "#4dff8818" : "#111",
+                border: anchor === a.id ? "2px solid #4dff88" : "2px solid #222",
+                color: anchor === a.id ? "#4dff88" : "#888",
+                fontSize: "11px", fontWeight: "bold", fontFamily: "inherit",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: "4px",
+                WebkitTapHighlightColor: "transparent",
+              }}>
+                <span>{a.label}</span>
+                <span style={{ fontSize: "9px", fontWeight: "normal", opacity: 0.7 }}>{a.desc}</span>
+              </button>
+            ))}
+          </div>
+        </SettingsSection>
+
+        {/* Split Mode */}
+        <SettingsSection title="🔍 分割モード">
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Btn onClick={() => { setSplitMode("auto"); rerunAutoDetect(); }}
+              color={splitMode === "auto" ? "#4dff88" : "#666"} full>
+              ✨ 自動検出
+            </Btn>
+            <Btn onClick={() => setSplitMode("grid")}
+              color={splitMode === "grid" ? "#6bbaff" : "#666"} full>
+              🔲 グリッド
+            </Btn>
+          </div>
+          {splitMode === "auto" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+              <SliderRow label="感度" value={threshold} onChange={setThreshold} min={180} max={254} display={threshold} />
+              <SliderRow label="最小" value={minSize} onChange={setMinSize} min={5} max={100} display={`${minSize}px`} />
+              <Btn onClick={rerunAutoDetect} color="#4dff88" full>
+                🔄 再検出（{detectedRegions.length}体検出中）
+              </Btn>
+            </div>
+          )}
+          {splitMode === "grid" && (
+            <div style={{ marginTop: "4px" }}>
+              <div style={{ display: "flex", gap: "16px" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "11px", color: "#888", marginBottom: "4px" }}>列数</div>
+                  <StepperInput value={cols} onChange={setCols} min={1} max={32} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "11px", color: "#888", marginBottom: "4px" }}>行数</div>
+                  <StepperInput value={rows} onChange={setRows} min={1} max={32} />
+                </div>
+              </div>
+              {image && (
+                <div style={{ fontSize: "11px", color: "#666", marginTop: "8px" }}>
+                  フレームサイズ: {Math.floor(image.width / cols)} × {Math.floor(image.height / rows)}px
+                </div>
+              )}
+              <Toggle label="グリッド表示" checked={showGrid} onChange={setShowGrid} />
+            </div>
+          )}
+        </SettingsSection>
+
+        {/* Background */}
+        <SettingsSection title="🎨 背景色">
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {["#1a1a2e", "#000000", "#ffffff", "#282c34", "#1e3a1e", "#3a1e1e", "#ff00ff"].map((c) => (
+              <div key={c} onClick={() => setBgColor(c)} style={{
+                width: "40px", height: "40px", background: c, borderRadius: "8px",
+                border: bgColor === c ? "3px solid #c44dff" : "3px solid #333",
+                cursor: "pointer",
+              }} />
+            ))}
+          </div>
+        </SettingsSection>
+
+        {/* Export */}
+        <SettingsSection title="💾 エクスポート">
+          <div style={{ fontSize: "11px", color: "#888", marginBottom: "4px" }}>
+            選択中: {selectedFrames.length} / {frames.length} フレーム
+            {anchor === "bottom" && " | 足元固定済み"}
+          </div>
+          <div style={{
+            padding: "12px", background: "#0f0f1a", borderRadius: "10px",
+            border: "1px solid #1a1a30", fontSize: "11px", lineHeight: 1.8, color: "#aaa",
+          }}>
+            <div style={{ color: "#4dff88", fontWeight: "bold", marginBottom: "6px" }}>
+              🎮 開発用エクスポート
+            </div>
+            <div>ゲーム開発用の透過PNG出力には</div>
+            <div>同梱の <span style={{ color: "#ffb86b" }}>sprite_exporter.py</span> を使用：</div>
+            <div style={{
+              background: "#111", borderRadius: "6px", padding: "8px", margin: "8px 0",
+              fontFamily: "monospace", fontSize: "10px", color: "#6bbaff",
+              whiteSpace: "pre-wrap", wordBreak: "break-all",
+            }}>
+              python sprite_exporter.py input.png
+            </div>
+            <div style={{ fontSize: "10px", color: "#666" }}>
+              ✅ 白背景を自動透過変換{"\n"}
+              ✅ 全フレーム同一サイズに統一{"\n"}
+              ✅ 足元固定 + 重心揃え{"\n"}
+              ✅ 個別PNG + スプライトシート出力{"\n"}
+              ✅ Unity/Godot取り込みガイド付き
+            </div>
+          </div>
+        </SettingsSection>
+      </div>
+    )}
+  </div>
+</div>
+```
+
+);
+}
+
+// –– Sub Components ––
+
+function Header() {
+return (
+<div style={{
+background: “linear-gradient(135deg, #0f0f1a, #1a0a2e)”,
+borderBottom: “2px solid #2a1a4e”, padding: “12px 16px”,
+display: “flex”, alignItems: “center”, gap: “10px”,
+}}>
+<span style={{
+fontSize: “20px”, fontWeight: “900”, letterSpacing: “-0.5px”,
+background: “linear-gradient(135deg, #ff6b9d, #c44dff, #6bbaff)”,
+WebkitBackgroundClip: “text”, WebkitTextFillColor: “transparent”,
+}}>⚔ SPRITE FORGE</span>
+<span style={{ fontSize: “10px”, color: “#555” }}>v3</span>
+</div>
+);
+}
+
+function SliderRow({ label, value, onChange, min, max, display }) {
+return (
+<div style={{ display: “flex”, alignItems: “center”, gap: “10px” }}>
+<span style={{ fontSize: “11px”, color: “#888”, minWidth: “32px” }}>{label}</span>
+<input type=“range” min={min} max={max} value={value}
+onChange={(e) => onChange(Number(e.target.value))}
+style={{ flex: 1, accentColor: “#c44dff” }} />
+<span style={{ fontSize: “12px”, color: “#ccc”, minWidth: “36px”, textAlign: “right”, fontWeight: “bold” }}>{display}</span>
+</div>
+);
+}
+
+function StepperInput({ value, onChange, min, max }) {
+const btnStyle = {
+width: “40px”, height: “40px”, background: “#1a1a30”, border: “1px solid #2a1a4e”,
+color: “#c44dff”, borderRadius: “10px”, cursor: “pointer”, fontSize: “20px”,
+display: “flex”, alignItems: “center”, justifyContent: “center”, fontFamily: “inherit”,
+};
+return (
+<div style={{ display: “flex”, alignItems: “center”, gap: “10px” }}>
+<button onClick={() => onChange(Math.max(min, value - 1))} style={btnStyle}>−</button>
+<span style={{ minWidth: “28px”, textAlign: “center”, fontSize: “18px”, fontWeight: “bold” }}>{value}</span>
+<button onClick={() => onChange(Math.min(max, value + 1))} style={btnStyle}>+</button>
+</div>
+);
+}
+
+function Toggle({ label, checked, onChange }) {
+return (
+<label style={{
+display: “flex”, alignItems: “center”, gap: “10px”, cursor: “pointer”,
+fontSize: “12px”, color: “#aaa”, marginTop: “8px”,
+}}>
+<div onClick={() => onChange(!checked)} style={{
+width: “44px”, height: “24px”, borderRadius: “12px”,
+background: checked ? “#c44dff” : “#333”, position: “relative”,
+transition: “background 0.2s”, cursor: “pointer”, flexShrink: 0,
+}}>
+<div style={{
+width: “20px”, height: “20px”, borderRadius: “50%”, background: “#fff”,
+position: “absolute”, top: “2px”, left: checked ? “22px” : “2px”, transition: “left 0.2s”,
+}} />
+</div>
+{label}
+</label>
+);
+}
+
+function SettingsSection({ title, children }) {
+return (
+<div>
+<div style={{ fontSize: “13px”, fontWeight: “bold”, color: “#c44dff”, marginBottom: “10px” }}>{title}</div>
+<div style={{ display: “flex”, flexDirection: “column”, gap: “10px” }}>{children}</div>
+</div>
+);
+}
+
+function Btn({ children, onClick, color = “#c44dff”, full = false, disabled = false }) {
+return (
+<button onClick={onClick} disabled={disabled} style={{
+background: disabled ? “#181818” : `${color}18`,
+border: `1px solid ${disabled ? "#2a2a2a" : color}`,
+color: disabled ? “#444” : color,
+padding: “12px 14px”, borderRadius: “10px”,
+cursor: disabled ? “not-allowed” : “pointer”,
+fontSize: “13px”, fontWeight: “bold”, fontFamily: “inherit”,
+width: full ? “100%” : “auto”, transition: “all 0.15s”,
+WebkitTapHighlightColor: “transparent”,
+}}>
+{children}
+</button>
+);
+}
+  </script>
 </body>
 </html>
