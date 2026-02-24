@@ -3,7 +3,7 @@
 
 ![demo](docs/demo.gif)
 
-👉 **デモ / Live Demo**  
+👉 **ブラウザで試す**  
 https://wani-neco-san.github.io/my-jsx-app/
 
 DOTCRAFTは、  
