@@ -1,7 +1,7 @@
 # DOTCRAFT｜AIドット絵プロンプト生成＆スプライト整形ツール  
 **AI Sprite Prompt Generator & Sprite Sheet Tool**
 
-![demo](docs/demo.gif)
+![demo](assets/dotcraft_demo.gif)
 
 👉 **ブラウザで試す**  
 https://wani-neco-san.github.io/my-jsx-app/
