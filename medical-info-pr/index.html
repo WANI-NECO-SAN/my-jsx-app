@@ -2,10 +2,43 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="0; url=./v10/?v=20260901-0658">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>院内広報メーカー</title>
-<script>location.replace('./v10/?v=20260901-0658');</script>
+<style>
+html,body{margin:0;min-height:100%;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;color:#1f2454}
+#loading{min-height:100svh;display:grid;place-items:center;font-weight:800;color:#6c5ce7}
+</style>
 </head>
-<body><p><a href="./v10/?v=20260901-0658">院内広報メーカーを開く</a></p></body>
+<body>
+<div id="loading">読み込み中…</div>
+<script>
+(async()=>{
+  try{
+    const res=await fetch('./v10/index.html?v=20260901-0702',{cache:'no-store'});
+    let html=await res.text();
+
+    // 相対パスをv10基準のまま維持
+    html=html.replace('<head>','<head><base href="./v10/">');
+
+    // テーマをHTML上でも必須項目にする
+    html=html.replace(
+      'id="theme" autocomplete="off"',
+      'id="theme" required aria-required="true" autocomplete="off"'
+    );
+
+    // 必須項目が空のままSTEP2以降へ進めないよう、画面遷移の入口で一括チェック
+    html=html.replace(
+      'function showStep(step, scroll=false){\n    currentStep=step;',
+      'function showStep(step, scroll=false){\n    if(step>1 && !validateTheme()) return;\n    currentStep=step;'
+    );
+
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    document.getElementById('loading').textContent='読み込みに失敗しました。再読み込みしてください。';
+  }
+})();
+</script>
+</body>
 </html>
