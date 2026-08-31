@@ -34,7 +34,7 @@ footer{padding:28px 20px calc(28px + env(safe-area-inset-bottom));text-align:cen
 <div class="actions"><button class="btn primary" data-scroll="#create">広報を作ってみる →</button><button class="btn soft" data-scroll="#how">使い方を見る ▶</button></div>
 <div class="features"><div class="feature"><span class="fi p">✦</span><b>MASTER</b><small>調査・編集・分割</small></div><div class="feature"><span class="fi o">▦</span><b>ページ設計</b><small>1本の記事を自然に分割</small></div><div class="feature"><span class="fi b">↗</span><b>RENDER</b><small>1枚ずつ画像化</small></div></div>
 </div>
-<div class="hero-media"><img id="heroImg" alt="剣士、騎士、魔法使いの3人が笑顔で冒険するイラスト"></div>
+<div class="hero-media"><picture><source media="(max-width:760px)" srcset="./hero-mobile.svg"><img id="heroImg" src="./hero-desktop.svg" alt="剣士、騎士、魔法使いの3人が笑顔で冒険するイラスト"></picture></div>
 </section>
 
 <section class="section" id="how"><div class="head"><span class="kicker">HOW IT WORKS</span><h2>やることは、3つだけ。</h2><p>入力して、MASTERを実行して、同じChatGPTでRENDERを1枚ずつ繰り返します。</p></div><div class="steps"><article class="card"><span class="num">01</span><div class="art p">✎</div><h3>テーマを入力</h3><p>参考URL、補足、対象者、ページ数を入力します。</p></article><article class="card"><span class="num">02</span><div class="art o">✦</div><h3>MASTERで設計</h3><p>1本の記事として調査・編集し、指定枚数へ自然に分割します。</p></article><article class="card"><span class="num">03</span><div class="art b">▣</div><h3>RENDERで完成</h3><p>同じ会話で未生成区間を1枚ずつ画像化します。</p></article></div></section>
@@ -66,17 +66,11 @@ footer{padding:28px 20px calc(28px + env(safe-area-inset-bottom));text-align:cen
 <footer>広報クエスト｜院内広報メーカー</footer>
 <div class="mobile-dock"><button id="dock">広報を作る →</button></div>
 <div id="toast" style="position:fixed;right:18px;bottom:calc(90px + env(safe-area-inset-bottom));z-index:40;background:#272957;color:#fff;padding:11px 14px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s"></div>
-
-<script src="hero-desktop.js"></script>
-<script src="hero-mobile.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 let pageCount=2,renderDone=0;
 const fields=['theme','sources','supplement','mustInclude','audience','internal'];
 const clean=v=>(v||'').trim()||'（なし）';
-
-function setHero(){const mobile=matchMedia('(max-width:760px)').matches;$('heroImg').src=mobile?window.HERO_MOBILE:window.HERO_DESKTOP}
-setHero();matchMedia('(max-width:760px)').addEventListener?.('change',setHero);
 
 function data(){return Object.fromEntries(fields.map(x=>[x,$(x).value]))}
 function masterPrompt(){const d=data();return `# 医療情報室広報 制作MASTER
