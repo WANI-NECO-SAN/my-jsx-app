@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8b52ff">
+<meta name="description" content="院内広報をMASTERとRENDERで作る公開ブラウザツール">
+<title>広報クエスト｜院内広報メーカー</title>
+<style>
+:root{--ink:#1e2354;--muted:#6c7190;--purple:#7a4cff;--pink:#e858bd;--orange:#ff9a42;--blue:#48a8ff;--green:#38b980;--line:rgba(48,43,100,.12);--shadow:0 24px 70px rgba(77,53,135,.12)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;color:var(--ink);background:linear-gradient(180deg,#fffdfb,#fff 40%,#faf8ff);line-height:1.7;overflow-x:hidden}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #58a9ff;outline-offset:3px}
+.topbar{position:fixed;z-index:20;top:0;left:0;right:0;display:flex;align-items:center;gap:18px;padding:14px clamp(18px,5vw,70px);padding-top:max(14px,env(safe-area-inset-top));background:rgba(255,255,255,.82);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:10px;font-weight:950;text-decoration:none;color:var(--ink);font-size:18px}.brand-icon{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--purple),var(--pink),var(--orange));box-shadow:0 8px 20px rgba(118,81,255,.25)}.topbar nav{margin-left:auto;display:flex;gap:22px}.topbar nav a{font-size:13px;font-weight:800;color:#555b79;text-decoration:none}.topbtn{border:0;border-radius:999px;padding:10px 17px;color:#fff;background:linear-gradient(135deg,var(--purple),#a444f4);font-weight:900}
+.hero{min-height:100svh;display:grid;grid-template-columns:minmax(390px,.82fr) minmax(540px,1.18fr);align-items:center;gap:28px;padding:120px clamp(24px,5vw,76px) 70px}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:12px;font-weight:900;box-shadow:0 10px 24px rgba(70,50,130,.06)}h1{font-size:clamp(48px,5.3vw,80px);line-height:1.08;letter-spacing:-.045em;margin:20px 0}.grad{background:linear-gradient(90deg,#704cff,#d854d1,#ff8a3c);-webkit-background-clip:text;background-clip:text;color:transparent}.grad2{background:linear-gradient(90deg,#3a8eff,#7854ed,#ed58b5);-webkit-background-clip:text;background-clip:text;color:transparent}.lead{max-width:620px;color:#5f6582}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}.btn{border:0;border-radius:15px;min-height:50px;padding:0 20px;font-weight:950;display:inline-flex;align-items:center;justify-content:center;gap:10px}.primary{color:#fff;background:linear-gradient(135deg,#6752ff,#933eff 55%,#d653bd);box-shadow:0 14px 28px rgba(115,71,240,.24)}.soft{background:#fff;color:#33395e;border:1px solid var(--line)}.success{background:linear-gradient(135deg,#24a86f,#49c68d);color:#fff}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:28px}.feature{background:rgba(255,255,255,.86);border:1px solid var(--line);border-radius:18px;padding:13px;display:grid;grid-template-columns:38px 1fr;gap:3px 10px;align-items:center;box-shadow:0 12px 30px rgba(70,48,130,.06)}.fi{grid-row:1/3;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:950}.fi.p{background:linear-gradient(135deg,#7550ff,#b256ff)}.fi.o{background:linear-gradient(135deg,#ff963d,#ffc557)}.fi.b{background:linear-gradient(135deg,#3f93ff,#58d2ef)}.feature b{font-size:13px}.feature small{color:#83879f;font-size:10px}
+.hero-media{position:relative;border-radius:34px;overflow:hidden;box-shadow:0 30px 80px rgba(83,59,143,.17);background:#eef5ff;aspect-ratio:16/9}.hero-media img{width:100%;height:100%;object-fit:cover;display:block}.hero-media:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+.section{padding:88px clamp(18px,6vw,90px)}.head{max-width:760px;margin:0 auto 34px;text-align:center}.kicker{font-size:10px;letter-spacing:.16em;font-weight:950;color:#7c55e8}.head h2{font-size:clamp(32px,4vw,50px);line-height:1.2;margin:8px 0}.head p{margin:0;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1080px;margin:auto}.card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:var(--shadow)}.num{font-size:10px;color:#a49bc4;font-weight:950}.art{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;color:#fff;font-size:23px;margin:24px 0 14px}.art.p{background:linear-gradient(135deg,#7050ff,#b456ff)}.art.o{background:linear-gradient(135deg,#ff913e,#ffca51)}.art.b{background:linear-gradient(135deg,#3e91ff,#58d1ef)}.card h3{margin:0 0 7px}.card p{margin:0;color:var(--muted);font-size:14px}
+.safety{max-width:1080px;margin:auto;background:linear-gradient(135deg,#fff8e7,#fff 50%,#f5f0ff);border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}.safety h2{margin:0 0 8px}.safety p{margin:0;color:#5e637d}.checks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.check{background:rgba(255,255,255,.8);border-radius:14px;padding:12px;font-size:13px}.check b{display:block}
+.workspace{max-width:1100px;margin:auto;background:#fff;border:1px solid var(--line);border-radius:30px;box-shadow:0 32px 80px rgba(74,50,130,.11);overflow:hidden}.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:linear-gradient(90deg,#302f69,#4b3d91);padding:10px;gap:6px}.tab{border:0;background:transparent;color:#cfd0ec;border-radius:13px;padding:12px;font-weight:900}.tab.active{background:rgba(255,255,255,.15);color:#fff}.pane{display:none;padding:28px}.pane.active{display:block}.pane h3{font-size:26px;margin:0 0 18px}.privacy{padding:12px 14px;border-radius:15px;background:#fff8e9;border:1px solid #ffe0a9;margin-bottom:18px;color:#684d26;font-size:13px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field span{font-size:13px;font-weight:900}.field input,.field textarea{width:100%;border:1px solid rgba(71,64,116,.18);border-radius:13px;padding:12px 13px;outline:none;background:#fff}.field textarea{min-height:94px;resize:vertical}.field input:focus,.field textarea:focus{border-color:#8c67ff;box-shadow:0 0 0 4px rgba(118,81,255,.09)}.pages{display:flex;gap:7px;flex-wrap:wrap}.page{width:42px;height:42px;border-radius:11px;border:1px solid var(--line);background:#fff;font-weight:950}.page.active{color:#fff;border-color:transparent;background:linear-gradient(135deg,#7351ff,#d657c0)}.note{padding:15px;border-radius:17px;background:#eef7ff;border:1px solid #d7eaf8;margin:15px 0;font-size:13px}.prompt{margin-top:16px}.prompt summary{cursor:pointer;font-weight:900}.prompt pre{white-space:pre-wrap;max-height:260px;overflow:auto;background:#fafafe;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:11px}.progress{height:12px;background:#ece8f4;border-radius:999px;overflow:hidden;margin:16px 0}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6e51ff,#e85eb8);transition:.3s}.renderstat{font-size:28px;font-weight:950}.public{max-width:1080px;margin:auto;padding:30px;border-radius:28px;background:linear-gradient(135deg,#2e306c,#5543a2 60%,#9e48a0);color:#fff;box-shadow:0 28px 70px rgba(60,44,114,.2)}.public p{color:#ece6ff}
+footer{padding:28px 20px calc(28px + env(safe-area-inset-bottom));text-align:center;color:#7b7f94;font-size:12px}.mobile-dock{display:none}
+@media(max-width:1000px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:110px}.hero-copy{max-width:780px}.hero-media{max-width:900px;width:100%;margin:auto}.topbar nav{display:none}.steps{grid-template-columns:1fr}.checks{grid-template-columns:1fr}}
+@media(max-width:760px){body{padding-bottom:80px}.topbar{padding:11px 15px;padding-top:max(11px,env(safe-area-inset-top))}.brand{font-size:15px}.brand-icon{width:32px;height:32px}.topbtn{padding:8px 13px;font-size:12px}.hero{padding:98px 16px 44px;gap:18px}.hero h1{font-size:clamp(39px,12vw,54px)}.lead{font-size:14px}.actions{display:grid;grid-template-columns:1fr 1fr}.btn{padding:0 14px;font-size:13px}.features{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:5px}.feature{min-width:230px;scroll-snap-align:start}.hero-media{width:calc(100% + 32px);margin-left:-16px;border-radius:26px 26px 0 0;aspect-ratio:9/16;box-shadow:none}.hero-media img{object-position:center}.section{padding:66px 16px}.head h2{font-size:32px}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.field input,.field textarea{font-size:16px}.pane{padding:20px}.pane h3{font-size:22px}.tabs{position:sticky;top:58px;z-index:5}.mobile-dock{display:block;position:fixed;z-index:30;left:0;right:0;bottom:0;padding:9px 14px calc(9px + env(safe-area-inset-bottom));background:rgba(255,255,255,.9);backdrop-filter:blur(18px);border-top:1px solid var(--line)}.mobile-dock button{width:100%;min-height:50px;border:0;border-radius:14px;color:#fff;background:linear-gradient(135deg,#6b51ff,#d656bd);font-weight:950}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="#home"><span class="brand-icon">✦</span><span>広報クエスト</span></a><nav><a href="#how">使い方</a><a href="#safe">安心して使うために</a><a href="#create">広報を作る</a></nav><button class="topbtn" data-scroll="#create">はじめる →</button></header>
+<main>
+<section class="hero" id="home">
+<div class="hero-copy">
+<div class="eyebrow">★ 院内広報を、もっと創造的に。</div>
+<h1>広報づくりを、<br><span class="grad">もっと楽しく、</span><br><span class="grad2">もっと分かりやすく。</span></h1>
+<p class="lead">テーマと参考資料を入れれば、長いプロンプトはサイト側で組み立てます。調査・編集はMASTER、画像づくりはRENDER。読みたくなる院内広報を、迷わず作れるようにします。</p>
+<div class="actions"><button class="btn primary" data-scroll="#create">広報を作ってみる →</button><button class="btn soft" data-scroll="#how">使い方を見る ▶</button></div>
+<div class="features"><div class="feature"><span class="fi p">✦</span><b>MASTER</b><small>調査・編集・分割</small></div><div class="feature"><span class="fi o">▦</span><b>ページ設計</b><small>1本の記事を自然に分割</small></div><div class="feature"><span class="fi b">↗</span><b>RENDER</b><small>1枚ずつ画像化</small></div></div>
+</div>
+<div class="hero-media"><img id="heroImg" alt="剣士、騎士、魔法使いの3人が笑顔で冒険するイラスト"></div>
+</section>
+
+<section class="section" id="how"><div class="head"><span class="kicker">HOW IT WORKS</span><h2>やることは、3つだけ。</h2><p>入力して、MASTERを実行して、同じChatGPTでRENDERを1枚ずつ繰り返します。</p></div><div class="steps"><article class="card"><span class="num">01</span><div class="art p">✎</div><h3>テーマを入力</h3><p>参考URL、補足、対象者、ページ数を入力します。</p></article><article class="card"><span class="num">02</span><div class="art o">✦</div><h3>MASTERで設計</h3><p>1本の記事として調査・編集し、指定枚数へ自然に分割します。</p></article><article class="card"><span class="num">03</span><div class="art b">▣</div><h3>RENDERで完成</h3><p>同じ会話で未生成区間を1枚ずつ画像化します。</p></article></div></section>
+
+<section class="section" id="safe"><div class="safety"><h2>🛡️ 安心して使うために</h2><p><strong>患者さんや職員個人を特定できる情報は入力しないでください。</strong> このサイト自体はフォーム内容を外部へ送信しません。コピーしたプロンプトをChatGPTへ貼り付けた時点でChatGPT側へ送信されます。</p><div class="checks"><div class="check"><b>✓ APIキー不要</b>独自バックエンドなし</div><div class="check"><b>✓ サーバー保存なし</b>フォーム内容を送信しません</div><div class="check"><b>✓ 公開前に確認</b>制度・数値・施設情報を確認してください</div></div></div></section>
+
+<section class="section" id="create"><div class="head"><span class="kicker">CREATE</span><h2>広報づくりを始めよう。</h2><p>スマホでもPCでも、同じ3ステップで使えます。</p></div>
+<div class="workspace">
+<div class="tabs"><button class="tab active" data-pane="1">1 入力</button><button class="tab" data-pane="2">2 MASTER</button><button class="tab" data-pane="3">3 RENDER</button></div>
+
+<section class="pane active" data-pane-panel="1"><h3>何を広報にしますか？</h3><div class="privacy">🔒 患者氏名、患者ID、職員個人の情報など、個人を特定できる情報は入力しないでください。</div><div class="formgrid">
+<label class="field full"><span>テーマ *</span><input id="theme" placeholder="例：名古屋市の病院の医療DX進捗状況について"></label>
+<label class="field full"><span>URL・参考資料</span><textarea id="sources" placeholder="https://..."></textarea></label>
+<label class="field"><span>補足情報</span><textarea id="supplement"></textarea></label>
+<label class="field"><span>特に入れたい内容</span><textarea id="mustInclude"></textarea></label>
+<label class="field"><span>対象者</span><input id="audience" value="全職員"></label>
+<div class="field"><span>総ページ数</span><div class="pages" id="pages"></div></div>
+<label class="field full"><span>院内固有情報</span><textarea id="internal" placeholder="正式に使用してよい情報だけ"></textarea></label>
+</div><div class="actions"><button class="btn primary" id="goMaster">広報の設計へ進む →</button><button class="btn soft" id="clear">入力をクリア</button></div></section>
+
+<section class="pane" data-pane-panel="2"><h3>広報全体をMASTERで設計</h3><div class="note">MASTERでは画像を作りません。1本の記事を完成させてから、指定枚数の描画区間に分けます。</div><div class="actions"><button class="btn primary" id="copyMaster">MASTERをコピー ⧉</button><button class="btn soft" id="openChat">ChatGPTを開く ↗</button></div><details class="prompt"><summary>MASTERプロンプトを確認</summary><pre id="masterPreview"></pre></details><div class="actions"><button class="btn success" id="masterDone">MASTERの作成が終わった ✓</button></div></section>
+
+<section class="pane" data-pane-panel="3"><h3>画像を1枚ずつ完成させる</h3><div class="renderstat" id="renderStat">0 / 2</div><div class="progress"><i id="bar"></i></div><p id="renderText">RENDERを2回実行します。</p><div class="actions"><button class="btn primary" id="copyRender">RENDERをコピー ⧉</button><button class="btn success" id="oneDone">1枚できた！ ✓</button><button class="btn soft" id="undo">1回戻す</button></div><details class="prompt"><summary>RENDERプロンプトを確認</summary><pre id="renderPreview"></pre></details><div class="note"><strong>RENDERはMASTERを実行した同じChatGPTの会話で実行してください。</strong></div></section>
+</div>
+</section>
+
+<section class="section"><div class="public"><h2>公開して使うことを前提にしています。</h2><p>静的サイトとして動作し、独自API・広告・アクセス解析・Cookieは使用しません。キーボード操作、iPhoneのSafe Area、動きを減らすOS設定にも対応します。</p></div></section>
+</main>
+<footer>広報クエスト｜院内広報メーカー</footer>
+<div class="mobile-dock"><button id="dock">広報を作る →</button></div>
+<div id="toast" style="position:fixed;right:18px;bottom:calc(90px + env(safe-area-inset-bottom));z-index:40;background:#272957;color:#fff;padding:11px 14px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s"></div>
+
+<script src="hero-desktop.js"></script>
+<script src="hero-mobile.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let pageCount=2,renderDone=0;
+const fields=['theme','sources','supplement','mustInclude','audience','internal'];
+const clean=v=>(v||'').trim()||'（なし）';
+
+function setHero(){const mobile=matchMedia('(max-width:760px)').matches;$('heroImg').src=mobile?window.HERO_MOBILE:window.HERO_DESKTOP}
+setHero();matchMedia('(max-width:760px)').addEventListener?.('change',setHero);
+
+function data(){return Object.fromEntries(fields.map(x=>[x,$(x).value]))}
+function masterPrompt(){const d=data();return `# 医療情報室広報 制作MASTER
+## 調査・編集・分割専用｜院内広報 汎用版
+
+【今回の入力】
+テーマ：${clean(d.theme)}
+URL・参考資料：${clean(d.sources)}
+補足情報：${clean(d.supplement)}
+特に入れたい内容：${clean(d.mustInclude)}
+対象者：${clean(d.audience)}
+総ページ数：${pageCount}ページ
+院内固有情報：${clean(d.internal)}
+
+■ 役割
+病院の医療情報室が発行するA4縦の院内広報を、調査・編集・情報設計してください。議事録・報告書・研修スライドではなく、職員が思わず目を止め、読後に新しいことを1つ知り、自分の仕事とのつながりが分かる広報にしてください。
+
+■ 中心メッセージ
+最初に「この広報を読んだ職員に何を一番知って帰ってほしいか」を1文で決めてください。可能なら「何が／どのくらい／何と比べて／何が違う／それが何を意味する」まで具体化してください。
+
+■ 総ページ数
+総ページ数は別案の数ではありません。1本の記事を何枚のA4誌面に分けるかです。導入は最初だけ、最終まとめは最後だけ。各区間を単独完結のポスターにしないでください。
+
+■ 調査
+URLや参考資料を実際に確認し、官公庁・公式資料・ガイドライン・原著など一次情報を優先してください。数字は対象、時点、分母、全国値・地域値などを確認してください。
+
+■ 数字
+数字→比較→読み取り→意味まで整理してください。当院の正確な数字があれば全国・地域・当院を比較し、進んでいる点、差がある点、次に確認したい点を具体化してください。当院データがなければ架空の数値を作らず「院内で見てみたい数字」として整理してください。
+
+■ 読みたくなる院内広報
+堅苦しい行政資料や議事録調にしないでください。自然な接続語を使い、見出しは少し気になり先を読みたくなる表現にしてください。セキュリティ、DX、制度改正、ショートカット、システム更新などテーマに応じて意味づけを変えてください。
+
+■ 「知る・学ぶ」
+読後に「へえ、そうだったのか」「覚えておこう」「今度ここを見てみよう」と思える内容を1つ以上入れてください。最後は精神論ではなく、今回知ってほしいこと、覚えておくと役立つこと、次に見ると理解が深まることを整理してください。
+
+■ 使用しない表現
+「○○というわけではありません」「○○したわけではありません」「○○では判断できません」「一概には言えません」「必ずしも○○ではありません」を使わないでください。「重要です」「重要なのは」を連発しないでください。否定形より読者が知りたい内容を直接書いてください。
+
+■ 一般論で埋めない
+「みんなで協力しましょう」「一人ひとりの意識が重要です」「今後も取り組みましょう」などで誌面を埋めないでください。余白には数字、比較、具体例、豆知識、注意点、実務で役立つ情報を優先してください。
+
+■ 事実
+入力・資料から確認できない病院名、担当者、連絡先、数値、順位、導入状況、QRコード等を作らないでください。「○○病院の近隣」と指定されても院内固有情報に明記されていなければ、その病院を「当院」や発行元として扱わないでください。
+
+■ 地図
+実在施設の位置を画像生成AIの推測で地図化しないでください。正確な位置情報がない場合は比較表、地域別一覧、距離を示さない概念図へ置き換えてください。
+
+■ 分割
+完成した1本の記事を指定ページ数と同じ数の描画区間に分けてください。
+最初：大タイトル、入口、最重要の発見、主要数字・比較。最終まとめはしない。
+中間：前から続く具体情報、新しい数字・比較、深掘り、具体例、地域差。
+最後：当院との関係、院内で見たい数字、実務で役立つポイント、知ってほしいこと、広報全体の最終まとめ。
+同じタイトル、導入、グラフ、主要数字を繰り返さないでください。
+
+■ デザインDNA
+A4縦、白背景、濃紺文字、アクセント1〜2色、現代的なエディトリアル、インフォグラフィック、大きな数字、細いデジタル罫線、適度な非対称配置。「病院の広報だけれど少し楽しい」誌面にしてください。角丸カードを大量に並べたWeb UI風は避けてください。
+
+■ 動物
+珍しい動物・少し珍しい動物をページごとに偏りなく使ってください。ハシビロコウを固定しないでください。候補例：センザンコウ、オカピ、ウォンバット、カモノハシ、テンレック、ビントロング、ミナミコアリクイ、ハリモグラ、サイガ、アカハナグマ、ヤブイヌ、アードウルフ、ジェネット、ラーテル、コビトカバ、マーラ、クオッカ、カカポ、キーウィ、ヘビクイワシ、アイアイ、シファカ、タスマニアデビル、ツチブタ、アルマジロ、オオミミギツネ、フクロアリクイ、ケープハイラックス、ヒクイドリなど。
+手描き表現は動物だけ。「絵が好きな普通の人が色鉛筆で丁寧に描いた、少し不器用で温かみのある絵」。吹き出し・セリフは禁止。その他の文字、図表、アイコンは精密なデジタル表現。
+
+■ 出力
+このMASTERでは画像を生成しないでください。
+【広報全体の中心メッセージ】
+【全体の編集方針】
+【描画区間1】〜指定ページ数分
+【共通デザインDNA】
+【生成状態】各区間：未生成
+まで出力して終了してください。`}
+
+const RENDER=`# 医療情報室広報 共通RENDER
+## 未生成区間を1枚だけ画像化
+
+MASTERで作成した描画区間と現在の生成状態を引き継いでください。
+
+「未生成」の描画区間のうち最も先の1区間だけを使って、新しいA4縦画像を1枚生成してください。他の未生成区間は同時に生成せず、生成済み区間も再利用しないでください。未生成区間がなければ生成せず終了してください。
+
+MASTERで確定した原稿をそのまま使い、大タイトル、導入、まとめ、キャッチコピー、一般論、数字、病院名、連絡先、QRコードなどを新しく追加しないでください。
+
+最初の描画区間の場合のみ、上部約25％を後から別途ヘッダー画像を置くための完全な白紙にしてください。文字、線、枠、背景色、キャラクター、アイコン、装飾、ページ番号を置かないでください。最初の区間以外は上部25％の空白を作らず、通常の余白で上端から開始してください。
+
+画像生成モデルへ渡すのは今回の1区間の確定原稿、共通デザインDNA、必要なレイアウト条件だけです。総ページ数、区間番号、PAGE表記、前後ページ、他区間の存在を知らせないでください。
+
+実在施設の位置を画像生成AIの推測で地図化しないでください。正確な地理情報がなければ比較表・一覧・概念図を使ってください。
+
+完成誌面は画像生成モデルで作成し、Python、Pillow、matplotlib、HTML/CSS、SVG、PowerPoint等で代替描画しないでください。
+
+CREATE EXACTLY ONE SINGLE FLAT PORTRAIT A4 CANVAS.
+RETURN EXACTLY ONE FINAL IMAGE.
+THE IMAGE CONTAINS EXACTLY ONE PHYSICAL SHEET.
+DO NOT CREATE TWO SIDE-BY-SIDE SHEETS.
+DO NOT ADD PAGE NUMBERS.
+DO NOT CREATE MULTIPLE DESIGN VARIATIONS.
+DO NOT INVENT NEW FACTS, NUMBERS, LABELS, CONTACT INFORMATION OR COPY.
+
+正常に1枚生成したら今回の区間を生成済みに更新し、そこで終了してください。`;
+
+function preview(){$('masterPreview').textContent=masterPrompt();$('renderPreview').textContent=RENDER}
+function showPane(n){document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('active',x.dataset.panePanel==n));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.pane==n));document.querySelector('#create').scrollIntoView({behavior:'smooth',block:'start'})}
+function toast(t){const el=$('toast');el.textContent=t;el.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.opacity=0,2200)}
+async function copy(t){try{await navigator.clipboard.writeText(t);toast('コピーしました')}catch{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('コピーしました')}}
+function updateRender(){renderDone=Math.max(0,Math.min(renderDone,pageCount));$('renderStat').textContent=renderDone+' / '+pageCount;$('bar').style.width=(renderDone/pageCount*100)+'%';$('renderText').textContent=renderDone>=pageCount?'予定枚数が完成しました。':'RENDERをあと'+(pageCount-renderDone)+'回実行します。'}
+function buildPages(){const p=$('pages');p.innerHTML='';for(let i=1;i<=6;i++){const b=document.createElement('button');b.type='button';b.className='page'+(i===pageCount?' active':'');b.textContent=i;b.onclick=()=>{pageCount=i;renderDone=0;buildPages();preview();updateRender()};p.appendChild(b)}}
+document.querySelectorAll('[data-scroll]').forEach(b=>b.onclick=()=>document.querySelector(b.dataset.scroll).scrollIntoView({behavior:'smooth'}));
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showPane(b.dataset.pane));
+$('goMaster').onclick=()=>{if(!$('theme').value.trim()){toast('テーマを入力してください');return}preview();showPane(2)};
+$('copyMaster').onclick=()=>copy(masterPrompt());
+$('openChat').onclick=()=>window.open('https://chatgpt.com/','_blank','noopener');
+$('masterDone').onclick=()=>showPane(3);
+$('copyRender').onclick=()=>copy(RENDER);
+$('oneDone').onclick=()=>{if(renderDone<pageCount)renderDone++;updateRender()};
+$('undo').onclick=()=>{if(renderDone>0)renderDone--;updateRender()};
+$('clear').onclick=()=>{fields.forEach(id=>$(id).value=id==='audience'?'全職員':'');pageCount=2;renderDone=0;buildPages();preview();updateRender();toast('入力をクリアしました')};
+$('dock').onclick=()=>document.querySelector('#create').scrollIntoView({behavior:'smooth'});
+buildPages();preview();updateRender();
+</script>
+</body>
+</html>
