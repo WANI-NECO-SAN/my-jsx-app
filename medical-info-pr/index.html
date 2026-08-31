@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#7b52ff" />
+  <meta name="color-scheme" content="light" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="description" content="テーマと参考資料から、ChatGPTで院内広報のMASTER原稿を設計し、RENDERで1枚ずつ画像化するブラウザツール。" />
+  <title>広報クエスト｜院内広報メーカー</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#workspace">入力画面へスキップ</a>
+  <div class="cursor-glow" aria-hidden="true"></div>
+  <div class="ambient-orb orb-1" aria-hidden="true"></div>
+  <div class="ambient-orb orb-2" aria-hidden="true"></div>
+  <div class="ambient-orb orb-3" aria-hidden="true"></div>
+
+  <header class="topbar" id="topbar">
+    <a class="brand" href="#home" aria-label="広報クエスト トップへ">
+      <span class="brand-icon" aria-hidden="true">✦</span>
+      <span>広報クエスト</span>
+    </a>
+    <nav class="desktop-nav" aria-label="メインナビゲーション">
+      <a href="#how">使い方</a>
+      <a href="#safety">安心して使うために</a>
+      <a href="#workspace">広報を作る</a>
+    </nav>
+    <button class="top-cta" type="button" data-scroll="#workspace">はじめる <span>→</span></button>
+  </header>
+
+  <main>
+    <section class="hero" id="home" aria-labelledby="hero-title">
+      <div class="hero-copy reveal">
+        <div class="eyebrow"><span aria-hidden="true">★</span> 院内広報を、もっと創造的に。</div>
+        <h1 id="hero-title">
+          広報づくりを、<br />
+          <span class="gradient-text">もっと楽しく、</span><br />
+          <span class="gradient-text alt">もっと分かりやすく。</span>
+        </h1>
+        <p class="hero-lead">
+          テーマと参考資料を入れれば、長いプロンプトはサイト側で組み立てます。
+          調査・編集はMASTER、画像づくりはRENDER。読みたくなる院内広報を、迷わず作れるようにします。
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" type="button" data-scroll="#workspace">広報を作ってみる <b aria-hidden="true">→</b></button>
+          <button class="btn btn-soft" type="button" data-scroll="#how">使い方を見る <b aria-hidden="true">▶</b></button>
+        </div>
+        <div class="hero-features" aria-label="主な機能">
+          <div><span class="feature-icon purple" aria-hidden="true">✦</span><b>MASTER</b><small>調査・編集・分割</small></div>
+          <div><span class="feature-icon orange" aria-hidden="true">▦</span><b>ページ設計</b><small>1本の記事を自然に分割</small></div>
+          <div><span class="feature-icon blue" aria-hidden="true">↗</span><b>RENDER</b><small>1枚ずつ画像化</small></div>
+        </div>
+      </div>
+
+      <div class="hero-stage" id="heroStage" aria-label="喜んで進む3人のキャラクター">
+        <div class="wash wash-a" aria-hidden="true"></div>
+        <div class="wash wash-b" aria-hidden="true"></div>
+        <div class="wash wash-c" aria-hidden="true"></div>
+        <div class="party-frame" data-depth="0.18">
+          <img id="partyImageHero" alt="剣士、騎士、魔法使いの3人が笑顔で進むイラスト" />
+        </div>
+        <div class="float-ui ui-master" data-depth="0.7"><span>✦</span><div><small>設計</small><b>MASTER</b></div></div>
+        <div class="float-ui ui-render" data-depth="0.5"><span>▣</span><div><small>画像化</small><b>RENDER</b></div></div>
+        <div class="float-ui ui-check" data-depth="0.85"><span>✓</span><div><small>進捗</small><b>READY</b></div></div>
+        <div class="float-ui ui-chart" data-depth="0.62"><small>広報づくり</small><div class="spark-bars"><i></i><i></i><i></i><i></i><i></i></div><b>↗</b></div>
+        <svg class="hero-arrow" viewBox="0 0 650 340" aria-hidden="true">
+          <defs><linearGradient id="arrow-gradient" x1="0" x2="1"><stop offset="0" stop-color="#ffd34f"/><stop offset=".5" stop-color="#ff8d45"/><stop offset="1" stop-color="#ff5fae"/></linearGradient></defs>
+          <path d="M55 282 C180 272 218 190 336 188 C463 186 508 118 565 56" fill="none" stroke="url(#arrow-gradient)" stroke-width="18" stroke-linecap="round" opacity=".78"/>
+          <path d="M548 43 L615 39 L584 98" fill="url(#arrow-gradient)" opacity=".95"/>
+        </svg>
+        <div class="sparkles" id="sparkles" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="section how" id="how" aria-labelledby="how-title">
+      <div class="section-heading reveal">
+        <span class="kicker">HOW IT WORKS</span>
+        <h2 id="how-title">やることは、3つだけ。</h2>
+        <p>プロンプトの仕組みを知らなくても大丈夫です。入力して、コピーして、同じChatGPTで画像を1枚ずつ作ります。</p>
+      </div>
+      <div class="steps-grid">
+        <article class="step-card reveal tilt-card"><div class="step-no">01</div><div class="step-art purple">✎</div><h3>テーマを入力</h3><p>参考URL、入れたい内容、対象者、ページ数を入力します。</p></article>
+        <article class="step-card reveal tilt-card"><div class="step-no">02</div><div class="step-art orange">✦</div><h3>MASTERで設計</h3><p>まず1本の記事として調査・編集し、必要な枚数に自然に分けます。</p></article>
+        <article class="step-card reveal tilt-card"><div class="step-no">03</div><div class="step-art blue">▣</div><h3>RENDERで完成</h3><p>同じ会話でRENDERを繰り返し、未生成区間を1枚ずつ画像化します。</p></article>
+      </div>
+    </section>
+
+    <section class="section safety" id="safety" aria-labelledby="safety-title">
+      <div class="safety-card reveal">
+        <div class="safety-icon" aria-hidden="true">🛡️</div>
+        <div>
+          <span class="kicker">BEFORE YOU START</span>
+          <h2 id="safety-title">安心して使うために</h2>
+          <p><strong>患者さんや職員個人を特定できる情報は入力しないでください。</strong> このサイト自体は入力内容をサーバーへ送信しません。コピーした内容をChatGPTへ貼り付けた時点で、ChatGPT側へ送信されます。</p>
+        </div>
+        <div class="safety-points">
+          <div><span>✓</span><p><b>サイト側で送信しません</b><small>APIキー・独自バックエンド・アクセス解析なし</small></p></div>
+          <div><span>✓</span><p><b>端末保存は選択式</b><small>入力内容の保存は初期状態でOFF</small></p></div>
+          <div><span>✓</span><p><b>公開前に事実確認</b><small>制度・数値・施設情報は必ず確認してから利用</small></p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section workspace-section" id="workspace" aria-labelledby="workspace-title">
+      <div class="section-heading reveal">
+        <span class="kicker">CREATE</span>
+        <h2 id="workspace-title">広報づくりを始めよう。</h2>
+        <p>その時に必要な操作だけを表示します。スマホでもPCでも同じ流れで使えます。</p>
+      </div>
+
+      <div class="workspace-shell reveal">
+        <aside class="quest-rail" aria-label="作成ステップ">
+          <div class="rail-title">QUEST MAP</div>
+          <button class="rail-step active" type="button" data-step="1"><span>1</span><div><b>入力</b><small>テーマと資料</small></div></button>
+          <button class="rail-step" type="button" data-step="2"><span>2</span><div><b>MASTER</b><small>調査・編集・分割</small></div></button>
+          <button class="rail-step" type="button" data-step="3"><span>3</span><div><b>RENDER</b><small>1枚ずつ画像化</small></div></button>
+          <div class="rail-progress" aria-hidden="true"><i id="railProgress"></i></div>
+        </aside>
+
+        <div class="workspace-main">
+          <section class="wizard-step active" data-panel="1" aria-labelledby="step1-title">
+            <div class="panel-head"><div><span>STEP 1</span><h3 id="step1-title">何を広報にしますか？</h3></div><div class="panel-badge">入力</div></div>
+
+            <div class="privacy-inline" role="note"><span aria-hidden="true">🔒</span><div><b>個人情報は入力しないでください</b><small>患者氏名、患者ID、職員個人の情報などは入力しないでください。</small></div></div>
+
+            <div class="form-grid">
+              <label class="field full"><span>テーマ <em>必須</em></span><input id="theme" autocomplete="off" placeholder="例：名古屋市の病院の医療DX進捗状況について" /></label>
+              <label class="field full"><span>URL・参考資料 <small>複数は改行</small></span><textarea id="sources" autocomplete="off" placeholder="https://..."></textarea></label>
+              <label class="field"><span>補足情報</span><textarea id="supplement" autocomplete="off" placeholder="例：名古屋市を中心に全国とも比較"></textarea></label>
+              <label class="field"><span>特に入れたい内容</span><textarea id="mustInclude" autocomplete="off" placeholder="例：近隣病院の状況"></textarea></label>
+              <label class="field"><span>対象者</span><input id="audience" autocomplete="off" value="全職員" /></label>
+              <div class="field"><span>総ページ数</span><div class="page-pills" id="pagePills" role="group" aria-label="総ページ数"></div><input type="hidden" id="pages" value="2" /></div>
+              <label class="field full"><span>院内固有情報 <small>正式に使用してよい情報だけ</small></span><textarea id="internal" autocomplete="off" placeholder="例：当院は○○病院／発行部署：医療情報室"></textarea></label>
+            </div>
+
+            <label class="save-toggle"><input type="checkbox" id="saveToggle" /><span class="toggle-ui" aria-hidden="true"></span><span><b>この端末に入力内容を保存する</b><small>共有PCではOFFのまま利用してください。初期状態はOFFです。</small></span></label>
+
+            <div class="panel-actions"><button class="btn btn-primary" type="button" id="toMaster">広報の設計へ進む <b>→</b></button><button class="text-btn" type="button" id="clearBtn">入力をクリア</button></div>
+          </section>
+
+          <section class="wizard-step" data-panel="2" aria-labelledby="step2-title">
+            <div class="panel-head"><div><span>STEP 2</span><h3 id="step2-title">広報全体をMASTERで設計</h3></div><div class="panel-badge purple-badge">MASTER</div></div>
+            <div class="master-visual"><div class="master-flow"><span>調査</span><i>→</i><span>編集</span><i>→</i><span>分割</span><i>→</i><span>原稿確定</span></div><p>MASTERでは画像を作りません。1本の記事を完成させてから、指定枚数の描画区間に分けます。</p></div>
+            <div class="next-action"><span>次にすること</span><strong>① MASTERをコピー　② ChatGPTを開く　③ 同じ会話で実行</strong></div>
+            <div class="master-buttons">
+              <button class="btn btn-primary" type="button" id="copyMaster">MASTERをコピー <b>⧉</b></button>
+              <button class="btn btn-soft" type="button" id="openChatGPT">ChatGPTを開く <b>↗</b></button>
+            </div>
+            <details class="prompt-details"><summary>MASTERプロンプトを確認する</summary><pre id="masterPreview"></pre></details>
+            <div class="panel-actions"><button class="btn btn-success" type="button" id="masterDone">MASTERの作成が終わった <b>✓</b></button><button class="text-btn" type="button" data-step-back="1">入力に戻る</button></div>
+          </section>
+
+          <section class="wizard-step" data-panel="3" aria-labelledby="step3-title">
+            <div class="panel-head"><div><span>STEP 3</span><h3 id="step3-title">画像を1枚ずつ完成させる</h3></div><div class="panel-badge orange-badge">RENDER</div></div>
+            <div class="render-dashboard">
+              <div class="render-ring" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="50"/><circle class="ring-value" id="ringValue" cx="60" cy="60" r="50"/></svg><div><strong id="renderFraction">0 / 2</strong><small>完了記録</small></div></div>
+              <div class="render-info"><h4 id="renderHeadline">画像を2枚作ります</h4><p>RENDERをコピーし、MASTERを実行した同じChatGPTの会話へ貼り付けます。1回のRENDERで1枚だけ生成します。</p><div class="render-dots" id="renderDots" aria-label="生成進捗"></div></div>
+            </div>
+            <div class="next-action"><span>次にすること</span><strong id="nextRenderAction">RENDERをコピーして、同じChatGPTへ貼り付ける</strong></div>
+            <div class="render-actions"><button class="btn btn-primary" type="button" id="copyRender">RENDERをコピー <b>⧉</b></button><button class="btn btn-success" type="button" id="renderDone">1枚できた！ <b>✓</b></button><button class="btn btn-soft" type="button" id="renderUndo">1回戻す</button></div>
+            <details class="prompt-details"><summary>RENDERプロンプトを確認する</summary><pre id="renderPreview"></pre></details>
+            <div class="render-note" role="note"><span aria-hidden="true">!</span><p><b>RENDERは必ず同じChatGPTの会話で実行してください。</b> 新しい会話ではMASTERで確定した描画区間を引き継げません。</p></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="section public-note" aria-labelledby="public-title">
+      <div class="public-card reveal">
+        <div><span class="kicker">FOR PUBLIC USE</span><h2 id="public-title">公開して使うことを前提にしています。</h2><p>このWebサイトは静的サイトとして動作します。独自APIやデータベースは使いません。入力保存をOFFにしている間、フォーム内容をブラウザの永続領域にも保存しません。</p></div>
+        <ul><li>アクセス解析・広告・Cookieなし</li><li>キーボード操作とフォーカス表示に対応</li><li>動きを減らすOS設定を尊重</li><li>スマホのノッチ・ホームバー領域を考慮</li></ul>
+      </div>
+    </section>
+
+    <section class="section ending">
+      <div class="ending-card reveal">
+        <div class="ending-copy"><span class="kicker">READY?</span><h2>読む人に、ひとつ新しい発見を。</h2><p>堅い資料を増やすより、「へえ、そうだったのか」が残る広報へ。</p><button class="btn btn-primary" type="button" data-scroll="#workspace">広報を作ってみる <b>→</b></button></div>
+        <div class="ending-party"><img id="partyImageEnding" alt="笑顔の3人のキャラクター" /></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div><b>広報クエスト</b><small>院内広報メーカー</small></div>
+    <div class="footer-notes"><span>APIキー不要</span><span>入力のサーバー保存なし</span><span>GitHub Pages対応</span></div>
+  </footer>
+
+  <div class="mobile-dock" id="mobileDock"><button type="button" id="mobileAction">広報を作る <span>→</span></button></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+  <noscript><div class="noscript">このサイトの操作にはJavaScriptが必要です。</div></noscript>
+
+  <script src="party.js"></script>
+  <script src="prompts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
