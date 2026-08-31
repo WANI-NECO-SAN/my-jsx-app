@@ -8,7 +8,7 @@
   <meta name="referrer" content="no-referrer" />
   <meta name="description" content="テーマと参考資料から、ChatGPTで院内広報のMASTER原稿を設計し、RENDERで1枚ずつ画像化するブラウザツール。" />
   <title>広報クエスト｜院内広報メーカー</title>
-  <!-- public v1.0: hero artwork used as responsive background -->
+  <!-- public v1.1: simplified mobile hero -->
   <style>
 :root{
   --ink:#1f2454;--muted:#666d8a;--purple:#7651ff;--violet:#b056ff;--pink:#ee5db3;--orange:#ff9b42;--yellow:#ffd653;--blue:#4aa7ff;--cyan:#57d6e8;--green:#38b980;--paper:#fffdfb;--line:rgba(53,48,99,.12);--shadow:0 26px 70px rgba(72,48,128,.11);--radius:28px;--safe-bottom:max(18px,env(safe-area-inset-bottom));
@@ -242,6 +242,62 @@ html,body{max-width:100%;overflow-x:hidden}body{width:100%}main,.hero,.section,.
   .hero h1{font-size:clamp(32px,10vw,39px) !important;}
 }
 
+
+/* v1.1 simplified hero */
+.hero-copy{max-width:600px}
+.hero h1{margin-bottom:16px}
+.hero-lead{max-width:520px;font-size:15px}
+.hero-actions{margin-top:20px}
+@media(max-width:760px){
+  .top-cta{display:none !important}
+  .hero{
+    min-height:82svh !important;
+    padding:98px 16px 86px !important;
+    align-items:flex-start !important;
+  }
+  .hero::before{
+    background:
+      linear-gradient(180deg,
+        rgba(255,253,251,.995) 0%,
+        rgba(255,253,251,.99) 31%,
+        rgba(255,253,251,.96) 43%,
+        rgba(255,253,251,.76) 53%,
+        rgba(255,253,251,.25) 66%,
+        rgba(255,253,251,0) 78%) !important;
+  }
+  .hero-copy{
+    width:100% !important;
+    max-width:100% !important;
+    padding:0 2px;
+  }
+  .hero h1{
+    max-width:9em !important;
+    margin:14px 0 10px !important;
+    font-size:clamp(36px,10.8vw,46px) !important;
+    line-height:1.04 !important;
+    color:var(--ink) !important;
+    text-shadow:none !important;
+  }
+  .hero .gradient-text{
+    background:none !important;
+    -webkit-background-clip:initial !important;
+    background-clip:initial !important;
+    color:#7b52ff !important;
+  }
+  .hero-lead{
+    max-width:23em !important;
+    margin:0 !important;
+    font-size:14px !important;
+    line-height:1.65 !important;
+    color:#555c79 !important;
+    text-shadow:none !important;
+  }
+  .hero-actions{display:none !important}
+  .party-frame img{
+    object-position:center 66% !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -267,24 +323,13 @@ html,body{max-width:100%;overflow-x:hidden}body{width:100%}main,.hero,.section,.
   <main>
     <section class="hero" id="home" aria-labelledby="hero-title">
       <div class="hero-copy reveal">
-        <div class="eyebrow"><span aria-hidden="true">★</span> 院内広報を、もっと創造的に。</div>
         <h1 id="hero-title">
           広報づくりを、<br />
-          <span class="gradient-text">もっと楽しく、</span><br />
-          <span class="gradient-text alt">もっと分かりやすく。</span>
+          <span class="gradient-text">もっと楽しく。</span>
         </h1>
-        <p class="hero-lead">
-          テーマと参考資料を入れれば、長いプロンプトはサイト側で組み立てます。
-          調査・編集はMASTER、画像づくりはRENDER。読みたくなる院内広報を、迷わず作れるようにします。
-        </p>
+        <p class="hero-lead">テーマと参考資料を入れるだけ。あとは順番に進めれば完成します。</p>
         <div class="hero-actions">
-          <button class="btn btn-primary" type="button" data-scroll="#workspace">広報を作ってみる <b aria-hidden="true">→</b></button>
-          <button class="btn btn-soft" type="button" data-scroll="#how">使い方を見る <b aria-hidden="true">▶</b></button>
-        </div>
-        <div class="hero-features" aria-label="主な機能">
-          <div><span class="feature-icon purple" aria-hidden="true">✦</span><b>MASTER</b><small>調査・編集・分割</small></div>
-          <div><span class="feature-icon orange" aria-hidden="true">▦</span><b>ページ設計</b><small>1本の記事を自然に分割</small></div>
-          <div><span class="feature-icon blue" aria-hidden="true">↗</span><b>RENDER</b><small>1枚ずつ画像化</small></div>
+          <button class="btn btn-primary" type="button" data-scroll="#workspace">広報を作る <b aria-hidden="true">→</b></button>
         </div>
       </div>
 
