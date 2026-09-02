@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>院内広報メーカー</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}iframe{display:block;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<iframe id="app" src="../v18/?embed=v19" title="院内広報メーカー"></iframe>
+<script>
+(()=>{
+ const frame=document.getElementById('app');
+ frame.addEventListener('load',()=>{
+  const w=frame.contentWindow,d=frame.contentDocument;
+  if(!w||!d||d.getElementById('v19-simple-flow')) return;
+
+  const mark=d.createElement('meta');mark.id='v19-simple-flow';d.head.appendChild(mark);
+  const style=d.createElement('style');
+  style.textContent=`
+    .quest-rail{grid-template-columns:repeat(2,1fr)!important}
+    .rail-step[data-step="3"]{display:none!important}
+    .rail-progress{display:none!important}
+    .v19-render{margin-top:28px;padding-top:26px;border-top:1px solid rgba(53,48,99,.12)}
+    .v19-render-head{margin-bottom:16px}
+    .v19-render-head h4{margin:0 0 5px;font-size:22px;color:#1f2454}
+    .v19-render-head p{margin:0;color:#666d8a;font-size:13px;line-height:1.7}
+    .v19-render-summary{padding:14px 16px;margin:14px 0 16px;border-radius:17px;background:rgba(255,255,255,.62);border:1px solid rgba(118,81,255,.14);font-weight:900;color:#34395f}
+    .v19-page-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .v19-page-btn{border:0;border-radius:16px;min-height:58px;padding:10px 14px;color:#fff;font-weight:950;cursor:pointer;background:linear-gradient(135deg,#6554ff,#943eff 55%,#dc54bd);box-shadow:0 12px 24px rgba(115,71,240,.18)}
+    .v19-page-btn small{display:block;font-size:10px;font-weight:700;opacity:.86;margin-top:2px}
+    .v19-help{margin:14px 0 0;padding:12px 14px;border-radius:15px;background:rgba(255,248,226,.72);border:1px solid rgba(235,178,65,.22);font-size:12px;color:#6f6249}
+    .v19-help b{color:#54472f}
+    #masterDone{display:none!important}
+    .next-phase{display:none!important}
+    @media(max-width:760px){
+      .quest-rail{grid-template-columns:repeat(2,1fr)!important}
+      .v19-page-buttons{grid-template-columns:1fr}
+      .v19-render-head h4{font-size:20px}
+    }
+  `;
+  d.head.appendChild(style);
+
+  const railButtons=[...d.querySelectorAll('.rail-step')];
+  if(railButtons[0]){railButtons[0].querySelector('b').textContent='内容を入力';railButtons[0].querySelector('small').textContent='広報の条件';}
+  if(railButtons[1]){railButtons[1].querySelector('b').textContent='ChatGPTで作成';railButtons[1].querySelector('small').textContent='原稿 → 画像';}
+
+  const step2=d.querySelector('.wizard-step[data-panel="2"]');
+  if(!step2) return;
+  const h3=step2.querySelector('.panel-head h3');if(h3)h3.textContent='ChatGPTで広報を作る';
+  const badge=step2.querySelector('.panel-badge');if(badge)badge.textContent='原稿 → 画像';
+
+  const oldExplain=step2.querySelector('.workflow-explain');if(oldExplain)oldExplain.remove();
+  const masterVisual=step2.querySelector('.master-visual');if(masterVisual)masterVisual.remove();
+  const handoffTitle=step2.querySelector('.handoff-title');
+  if(handoffTitle) handoffTitle.innerHTML='<b>① まず、原稿を作ります</b><small>原稿用プロンプトは最初に1回だけ実行します。調査・編集・ページ分割までChatGPTが行います。</small>';
+  const note=step2.querySelector('.handoff-note');
+  if(note) note.innerHTML='<span>↳</span><p>原稿用プロンプトをChatGPTに貼り付けて送信してください。原稿が完成したら、そのChatGPTの会話を閉じずに下の画像作成へ進みます。</p>';
+
+  const render=d.createElement('div');render.className='v19-render';
+  render.innerHTML=`
+    <div class="v19-render-head">
+      <h4>② 原稿ができたら、画像を作ります</h4>
+      <p>原稿を作った<strong>同じChatGPTの会話</strong>で実行してください。各ボタンは作るページを明示しているため、前回の生成状態をモデルに判断させません。</p>
+    </div>
+    <div class="v19-render-summary" id="v19Summary"></div>
+    <div class="v19-page-buttons" id="v19Buttons"></div>
+    <div class="v19-help"><b>使い方：</b> 1枚目のボタン → ChatGPTで生成 → この画面へ戻る → 2枚目のボタン、の順です。</div>
+  `;
+  step2.appendChild(render);
+
+  const letters=['A','B','C','D','E','F'];
+  function explicitPrompt(page,total){
+    const letter=letters[page-1];
+    const base=w.RENDER_PROMPT||'';
+    const first=page===1;
+    const override=`# 今回の画像化対象【最優先・固定】\n\n今回は MASTER の「描画原稿${letter}」だけを画像化してください。\n他の描画原稿を選ばないでください。\n「未生成のうち最も先を選ぶ」という判断は行わず、必ず描画原稿${letter}を使用してください。\n\n${first?'これは記事の先頭誌面です。今回だけ、誌面上部の約25％を後からヘッダー画像を置くための完全な白紙予約領域にしてください。白紙領域には文字・線・枠・背景色・キャラクター・アイコン・装飾・ページ番号を一切置かないでください。':'これは記事の継続誌面です。上部25％のヘッダー差し込み用空白は作らないでください。上端から通常の誌面余白で開始し、前に生成した先頭誌面の大きな上部空白を引き継がないでください。'}\n\n上記の「今回の画像化対象」とレイアウト条件は、この後に続く共通RENDER内の区間選択・上部余白に関する一般条件より優先します。\n\n--- 共通RENDER ---\n`;
+    return override+base;
+  }
+
+  function rebuild(){
+    const total=Math.max(1,Math.min(6,Number(d.getElementById('pages')?.value||2)));
+    const summary=d.getElementById('v19Summary');
+    if(summary) summary.textContent=`原稿用プロンプト：1回　→　画像用プロンプト：${total}回`;
+    const host=d.getElementById('v19Buttons');if(!host)return;host.innerHTML='';
+    for(let i=1;i<=total;i++){
+      const b=d.createElement('button');b.type='button';b.className='v19-page-btn';
+      b.innerHTML=`${i}枚目を作る<small>描画原稿 ${letters[i-1]} を指定</small>`;
+      b.addEventListener('click',async()=>{
+        const prompt=explicitPrompt(i,total);
+        let copied=false;
+        try{copied=await w.copyText(prompt);}catch(e){try{await navigator.clipboard.writeText(prompt);copied=true}catch(_){}}
+        try{w.returnToChatGPT();}catch(e){try{w.openChatGPT();}catch(_){}}
+        try{w.showToast(copied?`${i}枚目用プロンプトをコピーしました。同じChatGPTへ貼り付けてください。`:'コピーできませんでした。');}catch(e){}
+      });
+      host.appendChild(b);
+    }
+  }
+  rebuild();
+  const pages=d.getElementById('pages');if(pages)pages.addEventListener('change',rebuild);
+  d.querySelectorAll('.page-pill').forEach(b=>b.addEventListener('click',()=>setTimeout(rebuild,0)));
+
+  // Two-screen navigation only.
+  railButtons[1]?.addEventListener('click',()=>w.showStep(2,true));
+  const next=d.getElementById('nextFromInput');
+  if(next) next.addEventListener('click',()=>setTimeout(()=>{if(w.currentStep===2)rebuild();},0));
+ });
+})();
+</script>
+</body>
+</html>
