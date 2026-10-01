@@ -1,5 +1,10 @@
 const ALLOWED_ORIGIN = "https://wani-neco-san.github.io";
-const TEXT_MODEL = "gpt-6.1-sol";
+const DEFAULT_TEXT_MODEL = "gpt-6.1-sol";
+const ALLOWED_TEXT_MODELS = new Set([
+  "gpt-6-luna",
+  "gpt-6.1-sol",
+  "gpt-6-astra",
+]);
 const IMAGE_MODEL = "gpt-image-2.5-sunburst";
 
 function cors(origin) {
@@ -92,6 +97,10 @@ export default {
       const body = await request.json();
       const masterPrompt = String(body?.masterPrompt || "").trim();
       const pages = Math.max(1, Math.min(6, Number(body?.pages || 2)));
+      const requestedTextModel = String(body?.textModel || DEFAULT_TEXT_MODEL).trim();
+      const textModel = ALLOWED_TEXT_MODELS.has(requestedTextModel)
+        ? requestedTextModel
+        : DEFAULT_TEXT_MODEL;
 
       if (!masterPrompt) return json({ ok: false, error: "原稿用プロンプトが空です。" }, 400, origin);
       if (masterPrompt.length > 60000) return json({ ok: false, error: "入力が長すぎます。" }, 400, origin);
@@ -135,7 +144,7 @@ export default {
       const planningInput = `${masterPrompt}\n\n==================================================\nAPI自動生成用の追加指示【最優先】\n==================================================\nこの依頼を調査・編集し、指定ページ数 ${pages} 枚の院内広報として完成させてください。必要な場合はWeb検索を使い、入力されたURL・一次情報・最新情報を確認してください。\n\n最終出力はJSONスキーマに従います。\n・article_master：完成した記事全体と各ページの確定原稿を、人が確認できる形でまとめる。\n・pages：必ずちょうど ${pages} 件。page_number は1から連番。\n・各 image_prompt：そのページ1枚だけを画像生成モデルへ渡せば完成誌面を描ける、自己完結した日本語プロンプトにする。確定した見出し・本文・数字・表・出典表記を省略せず含める。\n・画像内に表示する日本語の文章は、image_prompt 内で引用符などを使い、正確な文言として明示する。画像生成時に新しい事実や文章を追加させない。\n・各ページは1枚のA4縦誌面。複数ページを1画像に並べない。ページ番号を入れない。\n・共通デザインDNAと、そのページに使う珍しい動物・動作も image_prompt に含める。\n・sources：実際に確認・使用した主要な出典。URLを推測で作らない。\n`;
 
       const planResponse = await openai("/responses", env.OPENAI_API_KEY, {
-        model: TEXT_MODEL,
+        model: textModel,
         reasoning: { effort: "high" },
         tools: [{ type: "web_search" }],
         tool_choice: "auto",
@@ -190,7 +199,7 @@ export default {
 
       return json({
         ok: true,
-        text_model: TEXT_MODEL,
+        text_model: textModel,
         image_model: IMAGE_MODEL,
         master: plan.article_master,
         sources: plan.sources || [],
