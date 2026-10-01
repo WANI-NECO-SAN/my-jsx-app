@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>院内広報メーカー</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}iframe{display:block;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<iframe id="frame" src="../v23/?embed=v24" title="院内広報メーカー"></iframe>
+<script>
+(()=>{
+  const frame=document.getElementById('frame');
+
+  function getInnerDocument(){
+    try{
+      const v23doc=frame.contentDocument;
+      const stage=v23doc?.getElementById('stage');
+      const v22doc=stage?.contentDocument;
+      const host=v22doc?.getElementById('host');
+      const v21doc=host?.contentDocument;
+      const shell=v21doc?.getElementById('shell');
+      const v20doc=shell?.contentDocument;
+      const app=v20doc?.getElementById('app');
+      return app?.contentDocument||null;
+    }catch(_){return null;}
+  }
+
+  function apply(){
+    const d=getInnerDocument();
+    if(!d)return false;
+    const select=d.getElementById('v23TextModel');
+    if(!select)return false;
+    if(d.getElementById('v24-luna-default'))return true;
+
+    const mark=d.createElement('meta');
+    mark.id='v24-luna-default';
+    d.head.appendChild(mark);
+
+    const astra=[...select.options].find(o=>o.value==='gpt-6-astra');
+    if(astra)astra.remove();
+
+    const luna=[...select.options].find(o=>o.value==='gpt-6-luna');
+    if(luna)luna.textContent='GPT-6 Luna｜標準・低コスト';
+    const sol=[...select.options].find(o=>o.value==='gpt-6.1-sol');
+    if(sol)sol.textContent='GPT-6.1 Sol｜品質重視';
+
+    select.value='gpt-6-luna';
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+
+    const desc=d.getElementById('v23ModelDesc');
+    if(desc)desc.textContent='通常はこちら。料金を抑えながら高推論で記事を作成します。';
+
+    const head=d.querySelector('.v23-model-head b');
+    if(head)head.textContent='記事作成モデル（Luna推奨）';
+
+    const help=d.querySelector('.v23-model-help');
+    if(help)help.textContent='通常はLunaで十分です。より複雑な調査や原稿品質を優先したい場合だけSolを選択してください。画像生成モデルは共通です。';
+
+    return true;
+  }
+
+  function boot(){
+    let n=0;
+    const t=setInterval(()=>{
+      n++;
+      if(apply()||n>240)clearInterval(t);
+    },250);
+  }
+  frame.addEventListener('load',boot);
+  setTimeout(boot,300);
+})();
+</script>
+</body>
+</html>
