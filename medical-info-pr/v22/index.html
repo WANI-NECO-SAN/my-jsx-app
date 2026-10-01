@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>院内広報メーカー</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}iframe{display:block;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<iframe id="host" src="../v21/?embed=v22" title="院内広報メーカー"></iframe>
+<script>
+(()=>{
+  const host=document.getElementById('host');
+  let generating=false;
+  let elapsedTimer=null;
+  let elapsedStarted=0;
+
+  function leaveGuard(e){
+    if(!generating)return;
+    e.preventDefault();
+    e.returnValue='';
+    return '';
+  }
+  window.addEventListener('beforeunload',leaveGuard);
+
+  function getInner(){
+    try{
+      const v21doc=host.contentDocument;
+      const shell=v21doc?.getElementById('shell');
+      const v20doc=shell?.contentDocument;
+      const inner=v20doc?.getElementById('app');
+      const d=inner?.contentDocument;
+      const w=inner?.contentWindow;
+      if(!d||!w)return null;
+      return {d,w};
+    }catch(_){return null;}
+  }
+
+  function install(){
+    const ctx=getInner();
+    if(!ctx)return false;
+    const {d}=ctx;
+    const btn=d.getElementById('v21Generate');
+    const status=d.getElementById('v21Status');
+    const results=d.getElementById('v21Results');
+    if(!btn||!status||!results)return false;
+    if(d.getElementById('v22-generation-overlay'))return true;
+
+    const style=d.createElement('style');
+    style.textContent=`
+      .v22-overlay{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(250,249,255,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overscroll-behavior:none}
+      .v22-overlay.show{display:flex}
+      .v22-panel{width:min(620px,100%);padding:28px 24px;border-radius:26px;background:rgba(255,255,255,.95);border:1px solid rgba(118,81,255,.16);box-shadow:0 28px 80px rgba(62,45,120,.18);text-align:center}
+      .v22-spinner{width:58px;height:58px;margin:0 auto 17px;border:5px solid #ece9ff;border-top-color:#7651ff;border-radius:50%;animation:v22spin .9s linear infinite}
+      @keyframes v22spin{to{transform:rotate(360deg)}}
+      .v22-panel h2{margin:0;color:#202658;font-size:25px;line-height:1.35}
+      .v22-panel .v22-lead{margin:8px 0 18px;color:#626984;font-size:13px;line-height:1.75}
+      .v22-panel .v22-warning{margin:0 0 18px;padding:12px 14px;border-radius:14px;background:#fff7e4;border:1px solid rgba(223,162,49,.24);color:#6c5932;font-size:12px;font-weight:850;line-height:1.65}
+      .v22-flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+      .v22-flow span{padding:7px 10px;border-radius:999px;background:#f4f1ff;border:1px solid rgba(118,81,255,.12);color:#594e98;font-size:10px;font-weight:900}
+      .v22-flow i{font-style:normal;color:#b0a8c9;font-weight:900}
+      .v22-time{font-size:12px;color:#666d8a;font-variant-numeric:tabular-nums}
+      .v22-note{margin:11px 0 0;color:#8a8da2;font-size:10px;line-height:1.6}
+      .v22-savebar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-radius:17px;background:linear-gradient(135deg,rgba(242,239,255,.92),rgba(255,246,232,.88));border:1px solid rgba(118,81,255,.14)}
+      .v22-savebar>div{display:grid;gap:2px}
+      .v22-savebar b{font-size:13px;color:#292e57}
+      .v22-savebar small{font-size:10px;color:#777b91;line-height:1.5}
+      .v22-saveall{border:0;min-height:42px;padding:0 15px;border-radius:12px;background:linear-gradient(135deg,#6554ff,#943eff 55%,#d857bd);color:#fff;font-weight:950;font-size:12px;cursor:pointer;box-shadow:0 9px 20px rgba(115,71,240,.18)}
+      @media(max-width:760px){.v22-panel{padding:23px 18px}.v22-panel h2{font-size:22px}.v22-savebar{align-items:stretch}.v22-saveall{width:100%}}
+    `;
+    d.head.appendChild(style);
+
+    const overlay=d.createElement('div');
+    overlay.id='v22-generation-overlay';
+    overlay.className='v22-overlay';
+    overlay.setAttribute('role','dialog');
+    overlay.setAttribute('aria-modal','true');
+    overlay.setAttribute('aria-hidden','true');
+    overlay.innerHTML=`
+      <div class="v22-panel">
+        <div class="v22-spinner" aria-hidden="true"></div>
+        <h2>院内広報を作成しています</h2>
+        <p class="v22-lead" id="v22OverlayLead">原稿作成と画像生成を行っています。数分かかる場合があります。</p>
+        <div class="v22-warning">この画面を閉じたり、再読み込みしないでください。</div>
+        <div class="v22-flow"><span>調査・原稿作成</span><i>→</i><span>ページ分割</span><i>→</i><span id="v22ImageFlow">画像生成</span></div>
+        <div class="v22-time">経過時間 <strong id="v22Elapsed">00:00</strong></div>
+        <p class="v22-note">完成すると自動でこの表示が消え、画像が表示されます。画像は自動ではダウンロードされません。</p>
+      </div>`;
+    d.body.appendChild(overlay);
+
+    const elapsed=d.getElementById('v22Elapsed');
+    const lead=d.getElementById('v22OverlayLead');
+    const imageFlow=d.getElementById('v22ImageFlow');
+
+    function formatElapsed(ms){
+      const total=Math.floor(ms/1000),m=Math.floor(total/60),s=total%60;
+      return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    }
+
+    function startOverlay(){
+      const theme=String(d.getElementById('theme')?.value||'').trim();
+      if(!theme)return;
+      const pages=Math.max(1,Math.min(6,Number(d.getElementById('pages')?.value||2)));
+      generating=true;
+      elapsedStarted=Date.now();
+      if(lead)lead.textContent=`原稿を調査・編集し、その後${pages}枚の画像を生成しています。数分かかる場合があります。`;
+      if(imageFlow)imageFlow.textContent=`画像${pages}枚生成`;
+      if(elapsed)elapsed.textContent='00:00';
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden','false');
+      clearInterval(elapsedTimer);
+      elapsedTimer=setInterval(()=>{if(elapsed)elapsed.textContent=formatElapsed(Date.now()-elapsedStarted)},1000);
+    }
+
+    function stopOverlay(){
+      generating=false;
+      clearInterval(elapsedTimer);elapsedTimer=null;
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden','true');
+    }
+
+    function addSaveAll(){
+      if(d.getElementById('v22SaveBar'))return;
+      const links=[...results.querySelectorAll('a.v21-download')];
+      if(!links.length)return;
+      const bar=d.createElement('div');bar.id='v22SaveBar';bar.className='v22-savebar';
+      bar.innerHTML='<div><b>画像が完成しました</b><small>自動保存はしていません。まとめて保存するか、各画像の「画像を保存」を使えます。</small></div><button type="button" class="v22-saveall">画像をすべて保存</button>';
+      const allBtn=bar.querySelector('.v22-saveall');
+      allBtn.addEventListener('click',()=>{
+        const current=[...results.querySelectorAll('a.v21-download')];
+        current.forEach((src,i)=>{
+          const a=d.createElement('a');
+          a.href=src.href;
+          a.download=src.download||`medical-info-pr-${i+1}.png`;
+          d.body.appendChild(a);a.click();a.remove();
+        });
+        const note=bar.querySelector('small');
+        if(note)note.textContent='保存を開始しました。ブラウザが複数ダウンロードの許可を求める場合があります。';
+      });
+      results.prepend(bar);
+    }
+
+    btn.addEventListener('click',startOverlay,true);
+
+    const observer=new MutationObserver(()=>{
+      const cls=status.classList;
+      if(cls.contains('error')){
+        stopOverlay();
+        return;
+      }
+      if(cls.contains('done')){
+        stopOverlay();
+        setTimeout(addSaveAll,50);
+      }
+    });
+    observer.observe(status,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
+
+    return true;
+  }
+
+  function boot(){
+    let tries=0;
+    const timer=setInterval(()=>{
+      tries++;
+      if(install()||tries>240)clearInterval(timer);
+    },250);
+  }
+  host.addEventListener('load',boot);
+  setTimeout(boot,300);
+})();
+</script>
+</body>
+</html>
