@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>院内広報メーカー</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}iframe{display:block;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<iframe id="shell" src="../v20/?embed=v21" title="院内広報メーカー"></iframe>
+<script>
+(()=>{
+  const WORKER_URL='https://medical-info-pr.bcs-lab.workers.dev/generate';
+  const shell=document.getElementById('shell');
+
+  shell.addEventListener('load',()=>{
+    const middle=shell.contentDocument;
+    const inner=middle?.getElementById('app');
+    if(!inner)return;
+
+    const install=()=>{
+      const d=inner.contentDocument,w=inner.contentWindow;
+      if(!d||!w||d.getElementById('v21-api-auto'))return;
+      const step2=d.querySelector('.wizard-step[data-panel="2"]');
+      if(!step2)return;
+
+      const mark=d.createElement('meta');mark.id='v21-api-auto';d.head.appendChild(mark);
+      const style=d.createElement('style');
+      style.textContent=`
+        .v21-auto{margin:4px 0 22px;padding:20px;border-radius:22px;background:linear-gradient(135deg,rgba(245,240,255,.88),rgba(255,248,232,.82));border:1px solid rgba(118,81,255,.18);box-shadow:0 14px 34px rgba(82,57,142,.08)}
+        .v21-auto-head{display:flex;gap:13px;align-items:flex-start}
+        .v21-auto-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#6554ff,#d857bd);color:#fff;font-size:20px;font-weight:950}
+        .v21-auto h4{margin:0;font-size:21px;color:#1f2454;line-height:1.3}
+        .v21-auto p{margin:5px 0 0;color:#666d8a;font-size:12px;line-height:1.7}
+        .v21-auto-meta{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
+        .v21-auto-meta span{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(80,70,132,.10);font-size:10px;font-weight:900;color:#555a77}
+        .v21-generate{width:100%;border:0;border-radius:16px;min-height:56px;padding:0 18px;color:#fff;font-weight:950;font-size:15px;cursor:pointer;background:linear-gradient(135deg,#6554ff,#943eff 55%,#dc54bd);box-shadow:0 14px 28px rgba(115,71,240,.22)}
+        .v21-generate:disabled{opacity:.55;cursor:wait}
+        .v21-cost{margin:10px 0 0!important;font-size:10px!important;color:#83776b!important;text-align:center}
+        .v21-status{display:none;margin-top:15px;padding:13px 14px;border-radius:15px;background:rgba(255,255,255,.75);border:1px solid rgba(80,70,132,.11);font-size:12px;color:#4f5576;line-height:1.65}
+        .v21-status.show{display:block}
+        .v21-status.busy:before{content:'●';display:inline-block;margin-right:8px;color:#7651ff;animation:v21pulse 1s ease-in-out infinite alternate}
+        .v21-status.error{color:#8b3144;background:rgba(255,238,241,.86);border-color:rgba(203,69,93,.18)}
+        @keyframes v21pulse{to{opacity:.25}}
+        .v21-results{display:grid;gap:18px;margin-top:18px}
+        .v21-result-card{padding:14px;border-radius:19px;background:rgba(255,255,255,.82);border:1px solid rgba(80,70,132,.11);box-shadow:0 12px 30px rgba(75,53,120,.06)}
+        .v21-result-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+        .v21-result-top b{font-size:13px;color:#292e57}
+        .v21-download{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 11px;border-radius:10px;background:#f2efff;color:#5c48c5;text-decoration:none;font-size:11px;font-weight:950}
+        .v21-result-card img{display:block;width:100%;height:auto;border-radius:12px;background:#f7f7fa}
+        .v21-details{margin-top:15px;border:1px solid rgba(80,70,132,.11);border-radius:15px;background:rgba(255,255,255,.66);overflow:hidden}
+        .v21-details summary{padding:12px 14px;cursor:pointer;font-size:12px;font-weight:900;color:#474d70}
+        .v21-details pre{margin:0;padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px;line-height:1.7;color:#555b78;border-top:1px solid rgba(80,70,132,.08)}
+        .v21-sources{padding:0 14px 14px;display:grid;gap:6px}
+        .v21-sources a{font-size:10px;color:#5f54c9;overflow-wrap:anywhere}
+        .v21-manual-toggle{width:100%;margin:4px 0 14px;border:0;background:transparent;color:#777b94;font-size:11px;font-weight:800;cursor:pointer;padding:9px}
+        .wizard-step[data-panel="2"]:not(.v21-manual-open) > .handoff-title,
+        .wizard-step[data-panel="2"]:not(.v21-manual-open) > .master-buttons,
+        .wizard-step[data-panel="2"]:not(.v21-manual-open) > .handoff-note,
+        .wizard-step[data-panel="2"]:not(.v21-manual-open) > .prompt-details,
+        .wizard-step[data-panel="2"]:not(.v21-manual-open) > .v19-render{display:none!important}
+        @media(max-width:760px){.v21-auto{padding:16px}.v21-auto h4{font-size:19px}.v21-result-card{padding:10px}}
+      `;
+      d.head.appendChild(style);
+
+      const head=step2.querySelector('.panel-head h3');if(head)head.textContent='AIで広報を作る';
+      const rails=[...d.querySelectorAll('.rail-step')];
+      if(rails[1]){const b=rails[1].querySelector('b'),s=rails[1].querySelector('small');if(b)b.textContent='AIで作成';if(s)s.textContent='原稿＋画像';}
+      const modelNote=step2.querySelector('.v20-model-note');
+      if(modelNote)modelNote.innerHTML='<span>💡</span><div><b>自動作成では高推論モデルを使用します</b><small>原稿の調査・分割には高推論モデル、画像には専用の画像生成モデルを使用します。</small></div>';
+
+      const box=d.createElement('div');box.className='v21-auto';
+      box.innerHTML=`
+        <div class="v21-auto-head"><div class="v21-auto-icon">AI</div><div><h4>原稿から画像まで、一気に作成</h4><p>入力した内容をもとに、調査 → 記事作成 → ページ分割 → 指定枚数の画像生成まで自動で行います。</p></div></div>
+        <div class="v21-auto-meta"><span>高推論</span><span>Web調査対応</span><span>1枚目はヘッダー用空白</span><span>珍しい動物入り</span></div>
+        <button type="button" class="v21-generate" id="v21Generate">記事＋画像を自動で作成する</button>
+        <p class="v21-cost">実行するとOpenAI APIクレジットを消費します。患者氏名・患者ID・職員個人情報は入力しないでください。</p>
+        <div class="v21-status" id="v21Status"></div>
+        <div class="v21-results" id="v21Results"></div>
+      `;
+      const insertAfter=modelNote||step2.querySelector('.panel-head');
+      insertAfter?.insertAdjacentElement('afterend',box);
+
+      const toggle=d.createElement('button');toggle.type='button';toggle.className='v21-manual-toggle';toggle.textContent='従来の手動方式を表示する';
+      box.insertAdjacentElement('afterend',toggle);
+      toggle.addEventListener('click',()=>{
+        const open=step2.classList.toggle('v21-manual-open');
+        toggle.textContent=open?'従来の手動方式を閉じる':'従来の手動方式を表示する';
+      });
+
+      const btn=d.getElementById('v21Generate');
+      const status=d.getElementById('v21Status');
+      const results=d.getElementById('v21Results');
+
+      const setStatus=(message,type='busy')=>{
+        status.textContent=message;status.className=`v21-status show ${type}`;
+      };
+      const get=(id)=>String(d.getElementById(id)?.value||'').trim();
+      const escData=(b64,mime)=>`data:${mime};base64,${b64}`;
+
+      btn.addEventListener('click',async()=>{
+        const theme=get('theme');
+        if(!theme){setStatus('テーマを入力してから実行してください。','error');return;}
+        const pages=Math.max(1,Math.min(6,Number(get('pages')||2)));
+        const data={theme,sources:get('sources'),supplement:get('supplement'),mustInclude:get('mustInclude'),audience:get('audience')||'全職員',pages:String(pages),internal:get('internal')};
+        const masterPrompt=typeof w.buildMasterPrompt==='function'?w.buildMasterPrompt(data):'';
+        if(!masterPrompt){setStatus('原稿用プロンプトを作成できませんでした。','error');return;}
+
+        btn.disabled=true;results.innerHTML='';
+        setStatus(`原稿を調査・編集し、その後${pages}枚の画像を生成しています。画像生成には数分かかる場合があります。この画面を閉じずにお待ちください。`,'busy');
+
+        try{
+          const controller=new AbortController();
+          const timer=setTimeout(()=>controller.abort(),10*60*1000);
+          const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({masterPrompt,pages}),signal:controller.signal});
+          clearTimeout(timer);
+          let payload={};try{payload=await res.json()}catch(_){throw new Error(`サーバー応答を読み取れませんでした（${res.status}）`)}
+          if(!res.ok||!payload.ok)throw new Error(payload.error||`生成に失敗しました（${res.status}）`);
+
+          setStatus(`${payload.images?.length||0}枚の画像を作成しました。下から確認・保存できます。`,'done');
+
+          (payload.images||[]).forEach(item=>{
+            const card=d.createElement('div');card.className='v21-result-card';
+            const top=d.createElement('div');top.className='v21-result-top';
+            const title=d.createElement('b');title.textContent=`${item.page}枚目｜${item.title||''}`;
+            const a=d.createElement('a');a.className='v21-download';a.textContent='画像を保存';a.href=escData(item.data,item.mime||'image/png');a.download=`medical-info-pr-${item.page}.png`;
+            top.append(title,a);
+            const img=d.createElement('img');img.alt=`生成した院内広報 ${item.page}枚目`;img.src=escData(item.data,item.mime||'image/png');
+            card.append(top,img);results.appendChild(card);
+          });
+
+          if(payload.master){
+            const details=d.createElement('details');details.className='v21-details';
+            const summary=d.createElement('summary');summary.textContent='作成した記事原稿を確認する';
+            const pre=d.createElement('pre');pre.textContent=payload.master;
+            details.append(summary,pre);results.appendChild(details);
+          }
+          if(Array.isArray(payload.sources)&&payload.sources.length){
+            const details=d.createElement('details');details.className='v21-details';
+            const summary=d.createElement('summary');summary.textContent='確認した主な出典';
+            const list=d.createElement('div');list.className='v21-sources';
+            payload.sources.forEach(s=>{if(!s?.url)return;const a=d.createElement('a');a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=s.title?`${s.title} — ${s.url}`:s.url;list.appendChild(a)});
+            details.append(summary,list);results.appendChild(details);
+          }
+        }catch(err){
+          const msg=err?.name==='AbortError'?'生成に時間がかかりすぎたため停止しました。もう一度お試しください。':(err?.message||'生成中にエラーが発生しました。');
+          setStatus(msg,'error');
+        }finally{btn.disabled=false;}
+      });
+    };
+
+    inner.addEventListener('load',()=>setTimeout(install,180));
+    if(inner.contentDocument?.readyState==='complete')setTimeout(install,250);
+  });
+})();
+</script>
+</body>
+</html>
