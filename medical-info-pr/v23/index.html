@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>院内広報メーカー</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff}iframe{display:block;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<iframe id="stage" src="../v22/?embed=v23" title="院内広報メーカー"></iframe>
+<script>
+(()=>{
+  const stage=document.getElementById('stage');
+
+  function findContext(){
+    try{
+      const v22doc=stage.contentDocument;
+      const v22host=v22doc?.getElementById('host');
+      const v21win=v22host?.contentWindow;
+      const v21doc=v22host?.contentDocument;
+      const v21shell=v21doc?.getElementById('shell');
+      const v20doc=v21shell?.contentDocument;
+      const v20app=v20doc?.getElementById('app');
+      const d=v20app?.contentDocument;
+      if(!v21win||!d)return null;
+      return {v21win,d};
+    }catch(_){return null;}
+  }
+
+  function install(){
+    const ctx=findContext();
+    if(!ctx)return false;
+    const {v21win,d}=ctx;
+    const box=d.querySelector('.v21-auto');
+    const button=d.getElementById('v21Generate');
+    if(!box||!button)return false;
+    if(d.getElementById('v23-model-picker'))return true;
+
+    const style=d.createElement('style');
+    style.textContent=`
+      .v23-model{margin:14px 0;padding:14px;border-radius:16px;background:rgba(255,255,255,.74);border:1px solid rgba(80,70,132,.11)}
+      .v23-model-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+      .v23-model-head b{font-size:12px;color:#32385f}
+      .v23-model-head span{font-size:9px;color:#817c96;background:#f3f0ff;padding:4px 7px;border-radius:999px;font-weight:900}
+      .v23-model select{width:100%;min-height:46px;border:1px solid rgba(80,70,132,.16);border-radius:12px;background:#fff;color:#272d58;padding:0 12px;font:inherit;font-size:13px;font-weight:900;outline:none}
+      .v23-model select:focus{border-color:#7651ff;box-shadow:0 0 0 3px rgba(118,81,255,.10)}
+      .v23-model-help{margin:8px 2px 0!important;color:#777b91!important;font-size:10px!important;line-height:1.55!important}
+      .v23-model-desc{margin:7px 2px 0!important;color:#5f647f!important;font-size:10px!important;font-weight:800}
+      @media(max-width:760px){.v23-model{padding:12px}.v23-model-head{align-items:flex-start;flex-direction:column}}
+    `;
+    d.head.appendChild(style);
+
+    const picker=d.createElement('div');
+    picker.id='v23-model-picker';
+    picker.className='v23-model';
+    picker.innerHTML=`
+      <div class="v23-model-head"><b>記事作成モデル</b><span>推論：High</span></div>
+      <select id="v23TextModel" aria-label="記事作成モデル">
+        <option value="gpt-6-luna">GPT-6 Luna｜節約・高速</option>
+        <option value="gpt-6.1-sol" selected>GPT-6.1 Sol｜推奨・バランス</option>
+        <option value="gpt-6-astra">GPT-6 Astra｜最高品質・高コスト</option>
+      </select>
+      <p class="v23-model-desc" id="v23ModelDesc">品質とコストのバランスを重視。院内広報の標準設定です。</p>
+      <p class="v23-model-help">モデル選択は調査・原稿作成部分に適用されます。画像生成モデルは共通です。</p>
+    `;
+
+    const meta=box.querySelector('.v21-auto-meta');
+    if(meta)meta.insertAdjacentElement('afterend',picker);
+    else button.insertAdjacentElement('beforebegin',picker);
+
+    const select=d.getElementById('v23TextModel');
+    const desc=d.getElementById('v23ModelDesc');
+    const descriptions={
+      'gpt-6-luna':'API料金を抑えたいテストや量産向け。高推論で実行します。',
+      'gpt-6.1-sol':'品質とコストのバランスを重視。院内広報の標準設定です。',
+      'gpt-6-astra':'複雑な調査や品質優先向け。原稿生成の料金は高くなります。'
+    };
+    select.addEventListener('change',()=>{desc.textContent=descriptions[select.value]||'';});
+
+    if(!v21win.__medicalInfoModelFetchPatched){
+      const originalFetch=v21win.fetch.bind(v21win);
+      v21win.fetch=async function(input,init){
+        try{
+          const url=typeof input==='string'?input:(input?.url||'');
+          if(url.includes('medical-info-pr.bcs-lab.workers.dev/generate') && init?.method==='POST'){
+            const data=JSON.parse(init.body||'{}');
+            const current=findContext();
+            const chosen=current?.d?.getElementById('v23TextModel')?.value||'gpt-6.1-sol';
+            data.textModel=chosen;
+            init={...init,body:JSON.stringify(data)};
+          }
+        }catch(_){ }
+        return originalFetch(input,init);
+      };
+      v21win.__medicalInfoModelFetchPatched=true;
+    }
+
+    return true;
+  }
+
+  function boot(){
+    let tries=0;
+    const timer=setInterval(()=>{
+      tries++;
+      if(install()||tries>240)clearInterval(timer);
+    },250);
+  }
+  stage.addEventListener('load',boot);
+  setTimeout(boot,300);
+})();
+</script>
+</body>
+</html>
